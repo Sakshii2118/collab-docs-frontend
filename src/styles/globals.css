@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+    margin: 0;
+    padding: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-500 text-white rounded-lg font-medium
+           hover:bg-primary-600 active:bg-primary-700
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium
+           hover:bg-gray-200 active:bg-gray-300
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-red-500 text-white rounded-lg font-medium
+           hover:bg-red-600 active:bg-red-700
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 text-gray-700 rounded-lg font-medium
+           hover:bg-gray-100 active:bg-gray-200
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg
+           bg-white text-gray-900 placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-all duration-150 ease-in-out;
+  }
+
+  .card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm
+           hover:shadow-md transition-shadow duration-200;
+  }
+
+  .badge-owner {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-primary-100 text-primary-700;
+  }
+
+  .badge-editor {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-green-100 text-green-700;
+  }
+
+  .badge-viewer {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-gray-100 text-gray-600;
+  }
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  outline: none;
+  min-height: 100%;
+  padding: 2rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #111827;
+}
+
+.ProseMirror h1 { font-size: 2em; font-weight: 700; margin: 1em 0 0.5em; }
+.ProseMirror h2 { font-size: 1.5em; font-weight: 600; margin: 1em 0 0.5em; }
+.ProseMirror h3 { font-size: 1.25em; font-weight: 600; margin: 1em 0 0.5em; }
+
+.ProseMirror ul { list-style-type: disc; padding-left: 1.5em; margin: 0.5em 0; }
+.ProseMirror ol { list-style-type: decimal; padding-left: 1.5em; margin: 0.5em 0; }
+.ProseMirror li { margin: 0.25em 0; }
+
+.ProseMirror blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1em;
+  color: #6b7280;
+  margin: 1em 0;
+  font-style: italic;
+}
+
+.ProseMirror code {
+  background: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+}
+
+.ProseMirror pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Collaboration cursors */
+.collaboration-cursor__caret {
+  border-left: 2px solid;
+  border-right: 2px solid;
+  margin-left: -1px;
+  margin-right: -1px;
+  position: relative;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.collaboration-cursor__label {
+  position: absolute;
+  top: -1.5em;
+  left: -1px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 3px 3px 3px 0;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  color: white;
+}
+
+/* Page transitions */
+.page-enter {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Selection */
+.ProseMirror ::selection {
+  background: #bfdbfe;
+}
+
+/* Link */
+.ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
