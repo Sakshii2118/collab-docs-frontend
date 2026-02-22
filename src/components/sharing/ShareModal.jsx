@@ -137,7 +137,7 @@ function InviteTab({ documentId }) {
 
 function ShareLinkTab({ documentId }) {
     const queryClient = useQueryClient()
-    const [expiry, setExpiry] = useState('')
+    const [expiresInDays, setExpiresInDays] = useState('')
     const [linkRole, setLinkRole] = useState('VIEWER')
 
     const { data: links = [] } = useQuery({
@@ -147,8 +147,8 @@ function ShareLinkTab({ documentId }) {
 
     const createMutation = useMutation({
         mutationFn: () => shareService.createShareLink(documentId, {
-            permission: linkRole,
-            expiresAt: expiry || undefined,
+            role: linkRole,
+            expiresInDays: expiresInDays ? Number(expiresInDays) : undefined,
         }),
         onSuccess: () => {
             toast.success('Share link created')
@@ -183,11 +183,12 @@ function ShareLinkTab({ documentId }) {
                     {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
                 <input
-                    type="datetime-local"
-                    value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
+                    type="number"
+                    min="1"
+                    value={expiresInDays}
+                    onChange={(e) => setExpiresInDays(e.target.value)}
                     className="flex-1 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="Expiry (optional)"
+                    placeholder="Expires in days (optional)"
                 />
                 <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending} size="sm">
                     <LinkIcon className="w-4 h-4" />
@@ -200,7 +201,7 @@ function ShareLinkTab({ documentId }) {
                     {links.map((link) => (
                         <div key={link.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                             <div>
-                                <div className="text-sm font-medium text-gray-900">{link.permission} access</div>
+                                <div className="text-sm font-medium text-gray-900">{link.role} access</div>
                                 <div className="text-xs text-gray-500 font-mono truncate max-w-xs">
                                     {window.location.origin}/share/{link.token}
                                 </div>
@@ -246,8 +247,8 @@ export function ShareModal({ documentId, documentTitle, isOpen, onClose }) {
                         key={t}
                         onClick={() => setTab(t)}
                         className={`px-4 py-3 text-sm font-medium border-b-2 capitalize transition-colors ${tab === t
-                                ? 'border-primary-500 text-primary-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            ? 'border-primary-500 text-primary-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         {t === 'invite' ? 'Invite People' : 'Share Link'}
