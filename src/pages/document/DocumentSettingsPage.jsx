@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
+import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { ConfirmDialog } from '../../components/common/ConfirmDialog'
@@ -19,6 +20,7 @@ const VISIBILITY_OPTIONS = [
 export default function DocumentSettingsPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuthStore()
     const queryClient = useQueryClient()
     const [showDelete, setShowDelete] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -31,11 +33,14 @@ export default function DocumentSettingsPage() {
     const [title, setTitle] = useState('')
     const [visibility, setVisibility] = useState('')
 
-    // Once doc loads, hydrate form
+    // Once doc loads, hydrate form state
     if (doc && !title && !visibility) {
         setTitle(doc.title || '')
         setVisibility(doc.visibility || 'PRIVATE')
     }
+
+    // Derive ownership since backend DocumentResponse has no role field
+    const isOwner = doc && user && doc.ownerEmail === user.email
 
     const updateMutation = useMutation({
         mutationFn: (data) => documentService.updateDocument(documentId, data),
@@ -106,8 +111,8 @@ export default function DocumentSettingsPage() {
                     </form>
                 </section>
 
-                {/* Danger Zone */}
-                {doc?.role === 'OWNER' && (
+                {/* Danger Zone — only for document owner */}
+                {isOwner && (
                     <section className="bg-white border border-red-200 rounded-2xl p-6">
                         <h2 className="text-base font-semibold text-red-700 mb-2">Danger Zone</h2>
                         <p className="text-sm text-gray-500 mb-4">Once you delete this document, there is no going back.</p>

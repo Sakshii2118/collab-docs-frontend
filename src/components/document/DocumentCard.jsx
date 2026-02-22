@@ -7,6 +7,7 @@ import { RoleBadge } from '../common/Badge'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { documentService } from '../../services/documentService'
 import { useDocumentStore } from '../../store/documentStore'
+import { useAuthStore } from '../../store/authStore'
 import { handleAPIError } from '../../utils/errorHandler'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -20,11 +21,15 @@ const VISIBILITY_COLORS = {
 
 export function DocumentCard({ document, onDelete }) {
     const navigate = useNavigate()
+    const { user } = useAuthStore()
     const { toggleStar } = useDocumentStore()
     const queryClient = useQueryClient()
     const [showMenu, setShowMenu] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+
+    // Derive ownership since backend has no role field in DocumentResponse
+    const isOwner = user && document.ownerEmail === user.email
 
     const handleClick = () => navigate(`/editor/${document.id}`)
 
@@ -105,7 +110,7 @@ export function DocumentCard({ document, onDelete }) {
                                     >
                                         <ShareIcon className="w-4 h-4" /> Share
                                     </button>
-                                    {document.role === 'OWNER' && (
+                                    {isOwner && (
                                         <button
                                             onClick={() => { setShowDeleteConfirm(true); setShowMenu(false) }}
                                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -135,7 +140,7 @@ export function DocumentCard({ document, onDelete }) {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between">
-                    {document.role && <RoleBadge role={document.role} />}
+                    {isOwner && <RoleBadge role="OWNER" />}
                     <span className={clsx('text-xs px-2 py-0.5 rounded-full font-medium ml-auto', VISIBILITY_COLORS[document.visibility] || VISIBILITY_COLORS.PRIVATE)}>
                         {document.visibility}
                     </span>

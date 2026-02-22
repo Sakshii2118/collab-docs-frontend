@@ -5,8 +5,23 @@ import { Input } from '../../components/common/Input'
 import { Button } from '../../components/common/Button'
 import { handleAPIError } from '../../utils/errorHandler'
 import { validatePassword } from '../../utils/validators'
-import { DocumentTextIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { DocumentTextIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+
+/** Returns a strength level 0–3 based on password length and variety */
+function getPasswordStrength(password) {
+    if (!password) return { level: 0, label: '', color: '' }
+    if (password.length < 8) return { level: 1, label: 'Too short', color: 'bg-red-400' }
+    const hasUpper = /[A-Z]/.test(password)
+    const hasLower = /[a-z]/.test(password)
+    const hasNum = /[0-9]/.test(password)
+    const hasSpecial = /[^A-Za-z0-9]/.test(password)
+    const score = [hasUpper, hasLower, hasNum, hasSpecial].filter(Boolean).length
+    if (score <= 1) return { level: 2, label: 'Weak', color: 'bg-orange-400' }
+    if (score === 2) return { level: 3, label: 'Fair', color: 'bg-yellow-400' }
+    if (score === 3) return { level: 4, label: 'Good', color: 'bg-blue-400' }
+    return { level: 5, label: 'Strong', color: 'bg-green-500' }
+}
 
 export default function RegisterPage() {
     const navigate = useNavigate()
@@ -14,18 +29,24 @@ export default function RegisterPage() {
         firstName: '', lastName: '', email: '', password: '',
     })
     const [isLoading, setIsLoading] = useState(false)
-    const [passwordErrors, setPasswordErrors] = useState([])
+    const [passwordError, setPasswordError] = useState('')
 
     const handlePasswordChange = (value) => {
         setFormData({ ...formData, password: value })
-        const { errors } = validatePassword(value)
-        setPasswordErrors(errors)
+        if (passwordError) {
+            const { errors } = validatePassword(value)
+            setPasswordError(errors[0] || '')
+        }
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         const { valid, errors } = validatePassword(formData.password)
-        if (!valid) { setPasswordErrors(errors); return }
+        if (!valid) {
+            setPasswordError(errors[0])
+            return
+        }
+        setPasswordError('')
         setIsLoading(true)
         try {
             await authService.register(formData)
@@ -38,13 +59,8 @@ export default function RegisterPage() {
         }
     }
 
-    const passwordRules = [
-        { regex: /.{8,}/, text: 'At least 8 characters' },
-        { regex: /[A-Z]/, text: 'One uppercase letter' },
-        { regex: /[a-z]/, text: 'One lowercase letter' },
-        { regex: /[0-9]/, text: 'One number' },
-        { regex: /[^A-Za-z0-9]/, text: 'One special character' },
-    ]
+    const strength = getPasswordStrength(formData.password)
+    const strengthSegments = 5
 
     return (
         <div className="min-h-screen flex">
@@ -103,27 +119,44 @@ export default function RegisterPage() {
                                 autoComplete="email"
                             />
 
-                            <Input
-                                label="Password"
-                                type="password"
-                                required
-                                value={formData.password}
-                                onChange={(e) => handlePasswordChange(e.target.value)}
-                                placeholder="••••••••"
-                                autoComplete="new-password"
-                            />
+                            <div>
+                                <Input
+                                    label="Password"
+                                    type="password"
+                                    required
+                                    value={formData.password}
+                                    onChange={(e) => handlePasswordChange(e.target.value)}
+                                    placeholder="••••••••"
+                                    autoComplete="new-password"
+                                    error={passwordError}
+                                    hint="Must be 8–120 characters"
+                                />
 
-                            {/* Password strength indicators */}
-                            {formData.password && (
-                                <div className="grid grid-cols-2 gap-1">
-                                    {passwordRules.map(({ regex, text }) => (
-                                        <div key={text} className={`flex items-center gap-1 text-xs ${regex.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
-                                            <CheckIcon className="w-3 h-3" />
-                                            {text}
+                                {/* Password strength bar */}
+                                {formData.password && (
+                                    <div className="mt-2">
+                                        <div className="flex gap-1 mb-1">
+                                            {Array.from({ length: strengthSegments }).map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < strength.level ? strength.color : 'bg-gray-200'
+                                                        }`}
+                                                />
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                        {strength.label && (
+                                            <p className={`text-xs font-medium ${strength.level <= 1 ? 'text-red-500' :
+                                                    strength.level === 2 ? 'text-orange-500' :
+                                                        strength.level === 3 ? 'text-yellow-600' :
+                                                            strength.level === 4 ? 'text-blue-500' :
+                                                                'text-green-600'
+                                                }`}>
+                                                {strength.label}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             <Button type="submit" loading={isLoading} className="w-full mt-2">
                                 Create Account

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { versionService } from '../../services/versionService'
 import { documentService } from '../../services/documentService'
 import { ArrowLeftIcon, ClockIcon, ArrowUturnLeftIcon, PlusIcon } from '@heroicons/react/24/outline'
@@ -19,25 +19,37 @@ export default function VersionHistoryPage() {
     const [restoreTarget, setRestoreTarget] = useState(null)
     const [isRestoring, setIsRestoring] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
+    const [showCreateForm, setShowCreateForm] = useState(false)
+    const [versionName, setVersionName] = useState('')
+    const [comment, setComment] = useState('')
 
     const { data: document } = useQuery({
         queryKey: ['document', documentId],
         queryFn: () => documentService.getDocument(documentId),
     })
 
-    const { data: versions = [], isLoading } = useQuery({
+    // API response shape: { documentId, totalVersions, versions: [...] }
+    const { data: versionData, isLoading } = useQuery({
         queryKey: ['versions', documentId],
         queryFn: () => versionService.listVersions(documentId),
     })
+    const versions = versionData?.versions || []
 
-    const handleCreate = async () => {
+    const handleCreate = async (e) => {
+        e.preventDefault()
+        if (!versionName.trim()) return
         setIsCreating(true)
         try {
+            // API 4.1: body requires { versionName, comment? }
             await versionService.createVersion(documentId, {
-                label: `Version ${versions.length + 1} - ${new Date().toLocaleDateString()}`,
+                versionName: versionName.trim(),
+                comment: comment.trim() || undefined,
             })
             toast.success('Version saved')
             queryClient.invalidateQueries(['versions', documentId])
+            setShowCreateForm(false)
+            setVersionName('')
+            setComment('')
         } catch (err) {
             handleAPIError(err)
         } finally {
@@ -48,8 +60,9 @@ export default function VersionHistoryPage() {
     const handleRestore = async () => {
         setIsRestoring(true)
         try {
-            await versionService.restoreVersion(documentId, restoreTarget.id)
-            toast.success('Version restored')
+            // API 4.4: POST /api/versions/{versionId}/restore — only versionId needed
+            await versionService.restoreVersion(restoreTarget.id)
+            toast.success('Document restored to this version')
             setRestoreTarget(null)
             navigate(`/editor/${documentId}`)
         } catch (err) {
@@ -72,30 +85,77 @@ export default function VersionHistoryPage() {
                             <p className="text-sm text-gray-500">{document?.title}</p>
                         </div>
                     </div>
-                    <Button onClick={handleCreate} loading={isCreating} size="sm">
-                        <PlusIcon className="w-4 h-4" /> Save Current Version
+                    <Button onClick={() => setShowCreateForm(true)} size="sm">
+                        <PlusIcon className="w-4 h-4" /> Save Version
                     </Button>
                 </div>
             </header>
+
+            {/* Create version form */}
+            {showCreateForm && (
+                <div className="max-w-2xl mx-auto pt-6 px-6">
+                    <form onSubmit={handleCreate} className="bg-white border border-primary-200 rounded-2xl p-5 space-y-4">
+                        <h2 className="font-semibold text-gray-900">Save a Version</h2>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Version Name *</label>
+                            <input
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                placeholder="e.g. Final Draft"
+                                value={versionName}
+                                onChange={e => setVersionName(e.target.value)}
+                                required
+                                autoFocus
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Comment (optional)</label>
+                            <input
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                placeholder="e.g. Completed all revisions"
+                                value={comment}
+                                onChange={e => setComment(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                            <Button type="button" variant="secondary" size="sm" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+                            <Button type="submit" size="sm" loading={isCreating} disabled={!versionName.trim()}>Save Version</Button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             <main className="max-w-2xl mx-auto p-6">
                 {isLoading ? (
                     <div className="flex justify-center py-12"><Spinner /></div>
                 ) : versions.length === 0 ? (
-                    <EmptyState icon={ClockIcon} title="No versions yet" description="Save a version to track your document history." />
+                    <EmptyState icon={ClockIcon} title="No versions yet" description="Save a version to create a checkpoint you can restore later." />
                 ) : (
                     <div className="space-y-3">
                         {versions.map((version, i) => (
-                            <div key={version.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
-                                <div>
-                                    <div className="font-medium text-gray-900">{version.label || `Version ${versions.length - i}`}</div>
-                                    <div className="text-sm text-gray-500">{formatDateTime(version.createdAt)}</div>
-                                    <div className="text-xs text-gray-400">{timeAgo(version.createdAt)}</div>
+                            <div key={version.id} className="flex items-start justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
+                                <div className="flex-1 min-w-0">
+                                    {/* API field is versionName not label */}
+                                    <div className="font-medium text-gray-900">{version.versionName || `Version ${versions.length - i}`}</div>
+                                    {version.comment && (
+                                        <div className="text-sm text-gray-500 mt-0.5">{version.comment}</div>
+                                    )}
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <div className="text-xs text-gray-400">{formatDateTime(version.createdAt)}</div>
+                                        <span className="text-gray-300">·</span>
+                                        <div className="text-xs text-gray-400">{timeAgo(version.createdAt)}</div>
+                                        {version.createdBy && (
+                                            <>
+                                                <span className="text-gray-300">·</span>
+                                                <div className="text-xs text-gray-400">by {version.createdBy}</div>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                                 <Button
                                     variant="secondary"
                                     size="sm"
                                     onClick={() => setRestoreTarget(version)}
+                                    className="ml-4 shrink-0"
                                 >
                                     <ArrowUturnLeftIcon className="w-4 h-4" /> Restore
                                 </Button>
@@ -110,7 +170,7 @@ export default function VersionHistoryPage() {
                 onClose={() => setRestoreTarget(null)}
                 onConfirm={handleRestore}
                 title="Restore Version"
-                description={`Restore to "${restoreTarget?.label}"? The current content will be replaced.`}
+                description={`Restore to "${restoreTarget?.versionName}"? A new version will be created from this checkpoint.`}
                 confirmLabel="Restore"
                 loading={isRestoring}
             />

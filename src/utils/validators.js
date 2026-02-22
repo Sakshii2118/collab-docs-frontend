@@ -2,16 +2,33 @@ export function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+/**
+ * Validates password for REGISTRATION.
+ * Matches backend: @Size(min=8, max=120)
+ */
 export function validatePassword(password) {
-    // Min 8 chars, uppercase, lowercase, number, special char
-    const rules = [
-        { regex: /.{8,}/, message: 'At least 8 characters' },
-        { regex: /[A-Z]/, message: 'At least one uppercase letter' },
-        { regex: /[a-z]/, message: 'At least one lowercase letter' },
-        { regex: /[0-9]/, message: 'At least one number' },
-        { regex: /[^A-Za-z0-9]/, message: 'At least one special character' },
-    ]
-    const errors = rules.filter((r) => !r.regex.test(password)).map((r) => r.message)
+    const errors = []
+    if (!password || password.length < 8) {
+        errors.push('Password must be at least 8 characters')
+    }
+    if (password && password.length > 120) {
+        errors.push('Password must not exceed 120 characters')
+    }
+    return { valid: errors.length === 0, errors }
+}
+
+/**
+ * Validates password for RESET PASSWORD flow.
+ * Matches backend: @Size(min=6) on newPassword in ResetPasswordRequest.
+ */
+export function validateResetPassword(password) {
+    const errors = []
+    if (!password || password.length < 6) {
+        errors.push('Password must be at least 6 characters')
+    }
+    if (password && password.length > 120) {
+        errors.push('Password must not exceed 120 characters')
+    }
     return { valid: errors.length === 0, errors }
 }
 

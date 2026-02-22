@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, EllipsisVerticalIcon, ShareIcon, ClockIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
+import { useAuthStore } from '../../store/authStore'
 import { TipTapEditor } from '../../components/editor/TipTapEditor'
 import { EditorMenuBar } from '../../components/editor/EditorMenuBar'
 import { ActiveUsersList } from '../../components/editor/ActiveUsersList'
@@ -13,6 +14,7 @@ import { Spinner } from '../../components/common/Spinner'
 export default function EditorPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuthStore()
     const [showMenu, setShowMenu] = useState(false)
     const [showShare, setShowShare] = useState(false)
 
@@ -20,6 +22,10 @@ export default function EditorPage() {
         queryKey: ['document', documentId],
         queryFn: () => documentService.getDocument(documentId),
     })
+
+    // Derive role from ownerEmail since backend DocumentResponse has no role field
+    const isOwner = doc && user && doc.ownerEmail === user.email
+    const role = isOwner ? 'OWNER' : 'EDITOR' // Default non-owners to EDITOR (collaborators)
 
     if (isLoading) {
         return (
@@ -109,7 +115,7 @@ export default function EditorPage() {
             </header>
 
             {/* Toolbar */}
-            {(doc.role === 'OWNER' || doc.role === 'EDITOR') && <EditorMenuBar />}
+            {(role === 'OWNER' || role === 'EDITOR') && <EditorMenuBar />}
 
             {/* Editor area */}
             <div className="flex-1 overflow-y-auto">
@@ -117,7 +123,7 @@ export default function EditorPage() {
                     <TipTapEditor
                         documentId={doc.id}
                         yjsRoomId={doc.yjsRoomId}
-                        role={doc.role}
+                        role={role}
                     />
                 </div>
             </div>

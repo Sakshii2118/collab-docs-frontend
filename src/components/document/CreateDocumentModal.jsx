@@ -1,34 +1,30 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Modal } from '../common/Modal'
 import { Input } from '../common/Input'
 import { Button } from '../common/Button'
 import { documentService } from '../../services/documentService'
-import { useDocumentStore } from '../../store/documentStore'
 import { handleAPIError } from '../../utils/errorHandler'
+import { LockClosedIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-
-const VISIBILITY_OPTIONS = [
-    { value: 'PRIVATE', label: 'Private', icon: '🔒', desc: 'Only you can access this document' },
-    { value: 'SHARED', label: 'Shared', icon: '👥', desc: 'People you invite can access' },
-    { value: 'PUBLIC', label: 'Public', icon: '🌐', desc: 'Anyone with the link can view' },
-]
 
 export function CreateDocumentModal({ isOpen, onClose }) {
     const navigate = useNavigate()
-    const { addDocument } = useDocumentStore()
+    const queryClient = useQueryClient()
     const [title, setTitle] = useState('')
-    const [visibility, setVisibility] = useState('PRIVATE')
     const [isLoading, setIsLoading] = useState(false)
 
     const handleCreate = async (e) => {
         e.preventDefault()
-        if (!title.trim()) { return }
+        if (!title.trim()) return
         setIsLoading(true)
         try {
-            const doc = await documentService.createDocument({ title: title.trim(), visibility })
-            addDocument(doc)
+            // Always create as PRIVATE — visibility can be changed later in Document Settings
+            const doc = await documentService.createDocument({ title: title.trim(), visibility: 'PRIVATE' })
             toast.success('Document created!')
+            // Invalidate the React Query cache so the dashboard list refreshes
+            await queryClient.invalidateQueries({ queryKey: ['documents'] })
             onClose()
             navigate(`/editor/${doc.id}`)
         } catch (error) {
@@ -40,7 +36,6 @@ export function CreateDocumentModal({ isOpen, onClose }) {
 
     const handleClose = () => {
         setTitle('')
-        setVisibility('PRIVATE')
         onClose()
     }
 
@@ -56,37 +51,14 @@ export function CreateDocumentModal({ isOpen, onClose }) {
                     autoFocus
                 />
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Visibility</label>
-                    <div className="space-y-2">
-                        {VISIBILITY_OPTIONS.map((opt) => (
-                            <label
-                                key={opt.value}
-                                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all
-                  ${visibility === opt.value
-                                        ? 'border-primary-500 bg-primary-50'
-                                        : 'border-gray-200 hover:border-gray-300'}`}
-                            >
-                                <input
-                                    type="radio"
-                                    name="visibility"
-                                    value={opt.value}
-                                    checked={visibility === opt.value}
-                                    onChange={() => setVisibility(opt.value)}
-                                    className="sr-only"
-                                />
-                                <span className="text-xl">{opt.icon}</span>
-                                <div>
-                                    <div className="text-sm font-medium text-gray-900">{opt.label}</div>
-                                    <div className="text-xs text-gray-500">{opt.desc}</div>
-                                </div>
-                                {visibility === opt.value && (
-                                    <div className="ml-auto w-4 h-4 rounded-full bg-primary-500 flex items-center justify-center">
-                                        <div className="w-2 h-2 rounded-full bg-white" />
-                                    </div>
-                                )}
-                            </label>
-                        ))}
+                {/* Visibility info — always starts as Private */}
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <LockClosedIcon className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
+                    <div>
+                        <div className="text-sm font-medium text-gray-800">Private by default</div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                            Only you can access this document. You can change visibility anytime from Document Settings.
+                        </div>
                     </div>
                 </div>
 

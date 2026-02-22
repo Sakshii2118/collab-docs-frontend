@@ -4,7 +4,7 @@ import { authService } from '../../services/authService'
 import { Input } from '../../components/common/Input'
 import { Button } from '../../components/common/Button'
 import { handleAPIError } from '../../utils/errorHandler'
-import { CheckIcon } from '@heroicons/react/24/outline'
+import { validateResetPassword } from '../../utils/validators'
 import toast from 'react-hot-toast'
 
 export default function ResetPasswordPage() {
@@ -13,6 +13,7 @@ export default function ResetPasswordPage() {
     const [email, setEmail] = useState(location.state?.email || '')
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
     const [newPassword, setNewPassword] = useState('')
+    const [passwordError, setPasswordError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const inputRefs = useRef([])
 
@@ -30,10 +31,29 @@ export default function ResetPasswordPage() {
         }
     }
 
+    const handlePasswordChange = (value) => {
+        setNewPassword(value)
+        if (passwordError) {
+            const { errors } = validateResetPassword(value)
+            setPasswordError(errors[0] || '')
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         const code = otp.join('')
-        if (code.length < 6) { toast.error('Please enter the 6-digit code'); return }
+        if (code.length < 6) {
+            toast.error('Please enter the 6-digit code')
+            return
+        }
+
+        const { valid, errors } = validateResetPassword(newPassword)
+        if (!valid) {
+            setPasswordError(errors[0])
+            return
+        }
+        setPasswordError('')
+
         setIsLoading(true)
         try {
             await authService.resetPassword({ email, otp: code, newPassword })
@@ -51,7 +71,7 @@ export default function ResetPasswordPage() {
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Reset password</h2>
-                    <p className="text-gray-500 text-sm mb-8">Enter the code sent to your email and your new password.</p>
+                    <p className="text-gray-500 text-sm mb-8">Enter the code sent to your email and choose a new password.</p>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {!email && (
@@ -84,9 +104,11 @@ export default function ResetPasswordPage() {
                             type="password"
                             required
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                            onChange={(e) => handlePasswordChange(e.target.value)}
                             placeholder="••••••••"
-                            hint="Min 8 chars with uppercase, lowercase, number & special character"
+                            autoComplete="new-password"
+                            error={passwordError}
+                            hint="At least 6 characters"
                         />
 
                         <Button type="submit" loading={isLoading} className="w-full">

@@ -108,12 +108,16 @@ export default function DashboardPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     const { data, isLoading } = useQuery({
-        queryKey: ['documents', page, search],
-        queryFn: () => documentService.listDocuments({ page, size: 12, search: search || undefined }),
+        queryKey: ['documents', page],
+        queryFn: () => documentService.listDocuments({ page, size: 12 }),
         keepPreviousData: true,
     })
 
-    const documents = data?.content || []
+    const allDocuments = data?.content || []
+    // Client-side search filter since backend list doesn't support search param yet
+    const documents = search
+        ? allDocuments.filter(d => d.title?.toLowerCase().includes(search.toLowerCase()))
+        : allDocuments
     const totalPages = data?.totalPages || 0
 
     return (
