@@ -10,7 +10,7 @@ import { DocumentTextIcon } from '@heroicons/react/24/outline'
 
 export default function LoginPage() {
     const navigate = useNavigate()
-    const { setUser } = useAuthStore()
+    const { setAuth } = useAuthStore()
     const [formData, setFormData] = useState({ email: '', password: '' })
     const [isLoading, setIsLoading] = useState(false)
 
@@ -19,7 +19,7 @@ export default function LoginPage() {
         setIsLoading(true)
         try {
             const response = await authService.login(formData)
-            setUser(response.data)
+            setAuth(response.data, response.data.token)
             toast.success('Welcome back!')
             const returnUrl = localStorage.getItem('returnUrl') || '/dashboard'
             localStorage.removeItem('returnUrl')

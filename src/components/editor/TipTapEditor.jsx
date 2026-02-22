@@ -16,52 +16,16 @@ import { generateUserColor } from '../../utils/colors'
 import { WS_URL } from '../../utils/constants'
 import { Spinner } from '../common/Spinner'
 
-/**
- * Read the JWT token from the browser's cookie jar.
- * The backend sets it as an HttpOnly cookie named "jwt"
- * (HttpOnly means JS can't read it directly in production,
- * but in dev mode secure=false so it's readable).
- */
-function getJwtFromCookie() {
-    return (
-        document.cookie
-            .split('; ')
-            .find((row) => row.startsWith('jwt='))
-            ?.split('=')[1] ?? null
-    )
-}
-
-export function TipTapEditor({ documentId, yjsRoomId, role }) {
-    const { user } = useAuthStore()
-    const { setEditor, setYjsProvider, setConnectionStatus, cleanup } = useEditorStore()
+// ── Inner component: only mounted once provider (and therefore awareness) ──
+// exists. This avoids CollaborationCursor being configured with a null provider.
+function EditorInner({ ydoc, provider, role, user }) {
+    const { setEditor, setYjsProvider, setConnectionStatus } = useEditorStore()
     const [isReady, setIsReady] = useState(false)
-    const providerRef = useRef(null)
-
-    // ── 1. Create ydoc once (stable across re-renders) ──────────────────────
-    const [ydoc] = useState(() => new Y.Doc())
-
-    // ── 2. Create WebsocketProvider BEFORE useEditor so CollaborationCursor
-    //       receives a real provider, not null. TipTap calls
-    //       provider.awareness synchronously inside addProseMirrorPlugins().
-    //
-    //       We use a ref so it's stable, and a useState initializer so it's
-    //       created exactly once per mount. ───────────────────────────────────
-    const [provider] = useState(() => {
-        const jwt = getJwtFromCookie()
-        const wsBase = WS_URL + '/ws/yjs'
-        const p = new WebsocketProvider(wsBase, yjsRoomId, ydoc, {
-            params: jwt ? { token: jwt } : {},
-        })
-        providerRef.current = p
-        return p
-    })
 
     const isEditable = role === 'OWNER' || role === 'EDITOR'
-
     const userName = user ? `${user.firstName} ${user.lastName}` : 'Anonymous'
     const userColor = generateUserColor(user?.id)
 
-    // ── 3. Create editor with a real provider passed to CollaborationCursor ──
     const editor = useEditor({
         extensions: [
             StarterKit.configure({ history: false }),
@@ -71,7 +35,6 @@ export function TipTapEditor({ documentId, yjsRoomId, role }) {
             Highlight,
             Link.configure({ openOnClick: false }),
             Collaboration.configure({ document: ydoc }),
-            // provider is now guaranteed non-null — created above before this call
             CollaborationCursor.configure({
                 provider,
                 user: { name: userName, color: userColor },
@@ -86,7 +49,6 @@ export function TipTapEditor({ documentId, yjsRoomId, role }) {
         },
     })
 
-    // ── 4. Wire up provider events and store references ──────────────────────
     useEffect(() => {
         if (!editor || !provider) return
 
@@ -109,15 +71,6 @@ export function TipTapEditor({ documentId, yjsRoomId, role }) {
         }
     }, [editor, provider])
 
-    // ── 5. Cleanup provider + editor on full unmount ─────────────────────────
-    useEffect(() => {
-        return () => {
-            providerRef.current?.disconnect()
-            cleanup()
-        }
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-    // ── Loading screen ────────────────────────────────────────────────────────
     if (!isReady) {
         return (
             <div className="flex flex-col items-center justify-center py-24 text-gray-400">
@@ -140,4 +93,51 @@ export function TipTapEditor({ documentId, yjsRoomId, role }) {
             <EditorContent editor={editor} />
         </div>
     )
+}
+
+// ── Outer component: waits for token, then creates provider ──────────────────
+export function TipTapEditor({ documentId, yjsRoomId, role }) {
+    const { user, token } = useAuthStore()
+    const { cleanup } = useEditorStore()
+
+    // Stable ydoc — created once per mount
+    const [ydoc] = useState(() => new Y.Doc())
+
+    // Provider is created only after token is available (Zustand may rehydrate
+    // from localStorage after first render). Storing in state so the re-render
+    // triggered by setProvider causes EditorInner to mount with a real provider.
+    const [provider, setProvider] = useState(null)
+    const providerRef = useRef(null)
+
+    useEffect(() => {
+        // Wait for token — don't attempt connection without it (would get 401)
+        if (!token || providerRef.current) return
+
+        const wsBase = WS_URL + '/ws/yjs'
+        const p = new WebsocketProvider(wsBase, yjsRoomId, ydoc, {
+            params: { token },
+        })
+        providerRef.current = p
+        setProvider(p)
+    }, [token, yjsRoomId, ydoc])
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            providerRef.current?.disconnect()
+            cleanup()
+        }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Show spinner while waiting for token / provider to be created
+    if (!provider) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                <Spinner size="lg" color="primary" />
+                <p className="mt-4 text-sm">Initialising session...</p>
+            </div>
+        )
+    }
+
+    return <EditorInner ydoc={ydoc} provider={provider} role={role} user={user} />
 }

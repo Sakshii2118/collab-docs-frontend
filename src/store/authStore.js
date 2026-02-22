@@ -5,11 +5,15 @@ export const useAuthStore = create(
     persist(
         (set) => ({
             user: null,
+            token: null,
             isAuthenticated: false,
 
             setUser: (user) => set({ user, isAuthenticated: true }),
 
-            logout: () => set({ user: null, isAuthenticated: false }),
+            // Call this after login to store both the user and the raw JWT
+            setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
+
+            logout: () => set({ user: null, token: null, isAuthenticated: false }),
 
             updateUser: (updates) =>
                 set((state) => ({
@@ -18,7 +22,7 @@ export const useAuthStore = create(
         }),
         {
             name: 'auth-storage',
-            partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+            partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
         }
     )
 )
