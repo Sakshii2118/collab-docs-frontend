@@ -121,10 +121,14 @@ export function TipTapEditor({ documentId, yjsRoomId, role }) {
         setProvider(p)
     }, [token, yjsRoomId, ydoc])
 
-    // Cleanup on unmount
+    // Cleanup on unmount — also null the ref so React StrictMode's double-invoke
+    // of effects (dev only) can create a fresh provider on the second run.
     useEffect(() => {
         return () => {
-            providerRef.current?.disconnect()
+            if (providerRef.current) {
+                providerRef.current.disconnect()
+                providerRef.current = null
+            }
             cleanup()
         }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
