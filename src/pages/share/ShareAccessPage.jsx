@@ -4,7 +4,7 @@ import { shareService } from '../../services/shareService'
 import { useAuthStore } from '../../store/authStore'
 import { Spinner } from '../../components/common/Spinner'
 import { Button } from '../../components/common/Button'
-import { DocumentTextIcon, LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { DocumentTextIcon, LockClosedIcon, ExclamationTriangleIcon, EyeIcon } from '@heroicons/react/24/outline'
 import { handleAPIError } from '../../utils/errorHandler'
 import toast from 'react-hot-toast'
 
@@ -26,7 +26,6 @@ export default function ShareAccessPage() {
             } catch (err) {
                 const status = err?.response?.status
                 if (status === 400) {
-                    // Link invalid / expired / usage limit
                     setError(err?.response?.data?.message || 'This share link is invalid or has expired.')
                 } else if (status === 404) {
                     setError('Share link not found.')
@@ -40,8 +39,8 @@ export default function ShareAccessPage() {
         validate()
     }, [token])
 
-    // Step 2: Once authenticated + shareInfo loaded, auto-grant access
-    // ONLY if the user was just redirected back from login (returnUrl matches)
+    // Step 2: Once authenticated + shareInfo loaded, auto-grant access ONLY
+    // if the user was just redirected back from login (returnUrl matches)
     useEffect(() => {
         if (!isAuthenticated || !shareInfo) return
 
@@ -58,6 +57,23 @@ export default function ShareAccessPage() {
             const result = await shareService.accessShareLink(token)
             toast.success(result.hasPermissionGranted ? 'Access granted! Welcome 🎉' : 'Welcome back!')
             navigate(`/editor/${result.documentId}`)
+        } catch (err) {
+            handleAPIError(err)
+        } finally {
+            setIsGranting(false)
+        }
+    }
+
+    /** Guest (anonymous) access — only available when requiresAuth=false */
+    const grantGuestAccess = async () => {
+        setIsGranting(true)
+        try {
+            const { token: guestJwt } = await shareService.anonymousAccess(token)
+            // Store in sessionStorage so it's cleared when the tab closes
+            sessionStorage.setItem('guestToken', guestJwt)
+            sessionStorage.setItem('guestDocumentId', shareInfo.documentId)
+            toast.success('Opening document as guest (read-only)')
+            navigate(`/editor/${shareInfo.documentId}`)
         } catch (err) {
             handleAPIError(err)
         } finally {
@@ -85,6 +101,9 @@ export default function ShareAccessPage() {
         )
     }
 
+    // Whether this link allows anonymous guest access
+    const allowsGuest = shareInfo && shareInfo.requiresAuth === false
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md">
@@ -102,17 +121,18 @@ export default function ShareAccessPage() {
                         </>
                     ) : (
                         <>
-                            {/* Icon — lock if requiresAuth, doc otherwise */}
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${shareInfo?.requiresAuth ? 'bg-amber-100' : 'bg-primary-100'
-                                }`}>
-                                {shareInfo?.requiresAuth
-                                    ? <LockClosedIcon className="w-8 h-8 text-amber-600" />
-                                    : <DocumentTextIcon className="w-8 h-8 text-primary-600" />
+                            {/* Icon */}
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${allowsGuest ? 'bg-green-100' : shareInfo?.requiresAuth ? 'bg-amber-100' : 'bg-primary-100'}`}>
+                                {allowsGuest
+                                    ? <EyeIcon className="w-8 h-8 text-green-600" />
+                                    : shareInfo?.requiresAuth
+                                        ? <LockClosedIcon className="w-8 h-8 text-amber-600" />
+                                        : <DocumentTextIcon className="w-8 h-8 text-primary-600" />
                                 }
                             </div>
 
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
-                                You've been invited to collaborate
+                                {allowsGuest ? 'Document shared with you' : "You've been invited to collaborate"}
                             </h2>
 
                             {shareInfo?.documentTitle && (
@@ -129,22 +149,42 @@ export default function ShareAccessPage() {
                                 </p>
                             )}
 
+                            {allowsGuest && !isAuthenticated && (
+                                <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2 mb-4">
+                                    🔓 This link is open — no account needed. You'll have read-only access.
+                                </p>
+                            )}
+
                             {shareInfo?.expiresAt && (
-                                <p className="text-xs text-gray-400 mb-6">
+                                <p className="text-xs text-gray-400 mb-4">
                                     Expires {new Date(shareInfo.expiresAt).toLocaleDateString()}
                                 </p>
                             )}
 
-                            {/* Granting spinner shown while auto-granting after login */}
+                            {/* Actions */}
                             {isGranting ? (
                                 <div className="flex flex-col items-center gap-2 mt-4">
                                     <Spinner size="md" color="primary" />
-                                    <p className="text-sm text-gray-500">Granting access...</p>
+                                    <p className="text-sm text-gray-500">Opening document...</p>
                                 </div>
                             ) : (
-                                <Button onClick={handleAccess} className="w-full mt-4">
-                                    {isAuthenticated ? 'Open Document' : 'Sign in to Open'}
-                                </Button>
+                                <div className="flex flex-col gap-2 mt-4">
+                                    {/* Primary action */}
+                                    <Button onClick={handleAccess} className="w-full">
+                                        {isAuthenticated ? 'Open Document' : 'Sign in to Open'}
+                                    </Button>
+
+                                    {/* Guest option — only shown when link allows anonymous access and user isn't logged in */}
+                                    {allowsGuest && !isAuthenticated && (
+                                        <button
+                                            onClick={grantGuestAccess}
+                                            className="w-full px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                                        >
+                                            <EyeIcon className="w-4 h-4 inline mr-1.5" />
+                                            Open as Guest (view only)
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </>
                     )}

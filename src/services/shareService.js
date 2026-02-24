@@ -22,6 +22,11 @@ export const shareService = {
     accessShareLink: (token) =>
         api.post(`/api/share/${token}/access`).then(r => r.data),
 
+    // ── 6.1.5 Anonymous Guest Access (no auth required, VIEWER only) ─────────
+    // POST /api/share/{token}/anonymous-access  (public)
+    anonymousAccess: (token) =>
+        api.post(`/api/share/${token}/anonymous-access`).then(r => r.data),
+
     // ── 6.1.5 Revoke Share Link ─────────────────────────────────────────────
     // POST /api/share-links/{linkId}/revoke
     revokeShareLink: (linkId) =>

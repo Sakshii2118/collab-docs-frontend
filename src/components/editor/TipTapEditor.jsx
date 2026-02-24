@@ -23,8 +23,8 @@ function EditorInner({ ydoc, provider, role, user }) {
     const [isReady, setIsReady] = useState(false)
 
     const isEditable = role === 'OWNER' || role === 'EDITOR'
-    const userName = user ? `${user.firstName} ${user.lastName}` : 'Anonymous'
-    const userColor = generateUserColor(user?.id)
+    const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest'
+    const userColor = generateUserColor(user?.id ?? 0)
 
     const editor = useEditor({
         extensions: [
@@ -48,6 +48,11 @@ function EditorInner({ ydoc, provider, role, user }) {
             },
         },
     })
+
+    useEffect(() => {
+        if (!editor) return
+        editor.setEditable(isEditable)
+    }, [editor, isEditable])
 
     useEffect(() => {
         if (!editor || !provider) return
@@ -96,8 +101,10 @@ function EditorInner({ ydoc, provider, role, user }) {
 }
 
 // ── Outer component: waits for token, then creates provider ──────────────────
-export function TipTapEditor({ documentId, yjsRoomId, role }) {
-    const { user, token } = useAuthStore()
+// `tokenOverride` allows guest sessions to bypass the authStore token.
+export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride }) {
+    const { user, token: authToken } = useAuthStore()
+    const effectiveToken = tokenOverride ?? authToken
     const { cleanup } = useEditorStore()
 
     // Stable ydoc — created once per mount
@@ -111,15 +118,15 @@ export function TipTapEditor({ documentId, yjsRoomId, role }) {
 
     useEffect(() => {
         // Wait for token — don't attempt connection without it (would get 401)
-        if (!token || providerRef.current) return
+        if (!effectiveToken || providerRef.current) return
 
         const wsBase = WS_URL + '/ws/yjs'
         const p = new WebsocketProvider(wsBase, yjsRoomId, ydoc, {
-            params: { token },
+            params: { token: effectiveToken },
         })
         providerRef.current = p
         setProvider(p)
-    }, [token, yjsRoomId, ydoc])
+    }, [effectiveToken, yjsRoomId, ydoc])
 
     // Cleanup on unmount — also null the ref so React StrictMode's double-invoke
     // of effects (dev only) can create a fresh provider on the second run.

@@ -139,6 +139,10 @@ function ShareLinkTab({ documentId }) {
     const queryClient = useQueryClient()
     const [expiresInDays, setExpiresInDays] = useState('')
     const [linkRole, setLinkRole] = useState('VIEWER')
+    const [requiresAuth, setRequiresAuth] = useState(true)
+
+    // When requiresAuth is off, lock role to VIEWER (guests must be read-only)
+    const effectiveRole = requiresAuth ? linkRole : 'VIEWER'
 
     const { data: links = [] } = useQuery({
         queryKey: ['share-links', documentId],
@@ -147,7 +151,8 @@ function ShareLinkTab({ documentId }) {
 
     const createMutation = useMutation({
         mutationFn: () => shareService.createShareLink(documentId, {
-            role: linkRole,
+            role: effectiveRole,
+            requiresAuth,
             expiresInDays: expiresInDays ? Number(expiresInDays) : undefined,
         }),
         onSuccess: () => {
@@ -174,11 +179,33 @@ function ShareLinkTab({ documentId }) {
 
     return (
         <div className="p-6 space-y-4">
+            {/* requiresAuth toggle */}
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <div>
+                    <div className="text-sm font-medium text-gray-800">
+                        {requiresAuth ? '🔒 Require sign-in' : '🔓 Open without login (view only)'}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                        {requiresAuth
+                            ? 'Recipients must be logged in to access'
+                            : 'Anyone with the link can view — role locked to VIEWER'}
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setRequiresAuth(v => !v)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${requiresAuth ? 'bg-primary-500' : 'bg-gray-300'}`}
+                >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${requiresAuth ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+            </div>
+
             <div className="flex gap-2">
                 <select
-                    value={linkRole}
-                    onChange={(e) => setLinkRole(e.target.value)}
-                    className="px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    value={effectiveRole}
+                    onChange={(e) => requiresAuth && setLinkRole(e.target.value)}
+                    disabled={!requiresAuth}
+                    className="px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
@@ -201,7 +228,10 @@ function ShareLinkTab({ documentId }) {
                     {links.map((link) => (
                         <div key={link.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                             <div>
-                                <div className="text-sm font-medium text-gray-900">{link.role} access</div>
+                                <div className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+                                    {link.requiresAuth === false ? '🔓' : '🔒'}
+                                    {link.role} access
+                                </div>
                                 <div className="text-xs text-gray-500 font-mono truncate max-w-xs">
                                     {window.location.origin}/share/{link.token}
                                 </div>
