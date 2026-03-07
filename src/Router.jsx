@@ -22,6 +22,7 @@ const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const ShareAccessPage = lazy(() => import('./pages/share/ShareAccessPage'))
+const InvitationRespondPage = lazy(() => import('./pages/invitations/InvitationRespondPage'))
 
 function LoadingFallback() {
     return (
@@ -54,6 +55,8 @@ export const router = createBrowserRouter([
         children: [
             { index: true, element: <LandingPage /> },
             { path: 'share/:token', element: <ShareAccessPage /> },
+            { path: 'invitations/accept/:token', element: <InvitationRespondPage /> },
+            { path: 'invitations/decline/:token', element: <InvitationRespondPage /> },
 
             // Public-only (redirect to dashboard if logged in)
             {
