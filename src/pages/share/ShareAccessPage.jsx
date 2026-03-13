@@ -69,9 +69,17 @@ export default function ShareAccessPage() {
         setIsGranting(true)
         try {
             const { token: guestJwt } = await shareService.anonymousAccess(token)
+
+            if (!shareInfo?.documentId) {
+                throw new Error('Share link metadata is missing document id')
+            }
+
             // Store in sessionStorage so it's cleared when the tab closes
             sessionStorage.setItem('guestToken', guestJwt)
-            sessionStorage.setItem('guestDocumentId', shareInfo.documentId)
+            sessionStorage.setItem('guestDocumentId', String(shareInfo.documentId))
+            if (shareInfo?.yjsRoomId) {
+                sessionStorage.setItem('guestYjsRoomId', shareInfo.yjsRoomId)
+            }
             toast.success('Opening document as guest (read-only)')
             navigate(`/editor/${shareInfo.documentId}`)
         } catch (err) {

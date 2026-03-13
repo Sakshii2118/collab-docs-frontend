@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { Spinner } from './components/common/Spinner'
 
@@ -33,7 +33,18 @@ function LoadingFallback() {
 }
 
 function ProtectedRoute() {
+    const location = useLocation()
     const { isAuthenticated } = useAuthStore()
+
+    const editorMatch = location.pathname.match(/^\/editor\/([^/]+)$/)
+    const routeDocumentId = editorMatch?.[1]
+    const guestDocumentId = sessionStorage.getItem('guestDocumentId')
+    const guestToken = sessionStorage.getItem('guestToken')
+    const isGuestEditorSession = Boolean(
+        routeDocumentId && guestToken && guestDocumentId && String(guestDocumentId) === String(routeDocumentId)
+    )
+
+    if (isGuestEditorSession) return <Outlet />
     if (!isAuthenticated) return <Navigate to="/login" replace />
     return <Outlet />
 }
