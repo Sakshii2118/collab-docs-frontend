@@ -15,6 +15,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'))
 const EditorPage = lazy(() => import('./pages/editor/EditorPage'))
 const VersionHistoryPage = lazy(() => import('./pages/document/VersionHistoryPage'))
 const DocumentSettingsPage = lazy(() => import('./pages/document/DocumentSettingsPage'))
+const ShareSettingsPage = lazy(() => import('./pages/share/ShareSettingsPage'))
 const InvitationsPage = lazy(() => import('./pages/invitations/InvitationsPage'))
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'))
 
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
                     { path: 'editor/:documentId', element: <EditorPage /> },
                     { path: 'document/:documentId/versions', element: <VersionHistoryPage /> },
                     { path: 'document/:documentId/settings', element: <DocumentSettingsPage /> },
+                    { path: 'document/:documentId/share', element: <ShareSettingsPage /> },
                     { path: 'invitations', element: <InvitationsPage /> },
                     { path: 'profile', element: <ProfilePage /> },
                 ],

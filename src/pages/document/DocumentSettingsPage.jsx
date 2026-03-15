@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, TrashIcon, LockClosedIcon, UserGroupIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
 import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/common/Button'
