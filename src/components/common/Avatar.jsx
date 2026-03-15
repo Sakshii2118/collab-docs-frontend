@@ -5,7 +5,7 @@ const sizes = {
     xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
-    lg: 'w-12 h-12 text-base',
+    lg: 'w-14 h-14 text-base',
 }
 
 export function Avatar({ user, size = 'md', className = '' }) {
@@ -17,7 +17,7 @@ export function Avatar({ user, size = 'md', className = '' }) {
         <div
             className={clsx(
                 'rounded-full flex items-center justify-center font-semibold text-white',
-                'select-none flex-shrink-0',
+                'select-none flex-shrink-0 ring-2 ring-white shadow-sm',
                 sizes[size],
                 className,
             )}
@@ -46,8 +46,8 @@ export function AvatarGroup({ users = [], max = 5, size = 'sm' }) {
             {overflow > 0 && (
                 <div
                     className={clsx(
-                        'rounded-full bg-gray-200 text-gray-600 flex items-center justify-center',
-                        'font-semibold border-2 border-white text-xs',
+                        'rounded-full bg-gray-100 text-gray-600 flex items-center justify-center',
+                        'font-semibold border-2 border-white text-xs ring-2 ring-white shadow-sm',
                         sizes[size],
                     )}
                 >

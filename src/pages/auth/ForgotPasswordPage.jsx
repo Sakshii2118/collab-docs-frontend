@@ -30,8 +30,9 @@ export default function ForgotPasswordPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-                    <div className="w-14 h-14 bg-primary-100 rounded-full flex items-center justify-center mb-6">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-primary-500 to-primary-700 -mx-8 -mt-8 mb-8" />
+                    <div className="w-14 h-14 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
                         <LockClosedIcon className="w-7 h-7 text-primary-600" />
                     </div>
 

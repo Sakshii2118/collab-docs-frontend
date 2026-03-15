@@ -82,8 +82,9 @@ export default function VerifyOTPPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 text-center overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-primary-500 to-primary-700 -mx-8 -mt-8 mb-8" />
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
                         <EnvelopeIcon className="w-8 h-8 text-primary-600" />
                     </div>
 
@@ -94,7 +95,7 @@ export default function VerifyOTPPage() {
                     <p className="font-semibold text-gray-900 mb-8">{email}</p>
 
                     <form onSubmit={handleSubmit}>
-                        <div className="flex justify-center gap-3 mb-8" onPaste={handlePaste}>
+                        <div className="flex justify-center gap-2.5 mb-8" onPaste={handlePaste}>
                             {otp.map((digit, index) => (
                                 <input
                                     key={index}
@@ -106,34 +107,34 @@ export default function VerifyOTPPage() {
                                     onChange={(e) => handleChange(index, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(index, e)}
                                     className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl
-                             focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200
+                             focus:outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10
                              transition-all text-gray-900"
                                 />
                             ))}
                         </div>
 
-                        <Button type="submit" loading={isLoading} className="w-full mb-4">
+                        <Button type="submit" loading={isLoading} className="w-full mb-4" size="lg">
                             Verify Email
                         </Button>
                     </form>
 
                     <p className="text-sm text-gray-500">
-                        Didn't receive the code?{' '}
+                        Didn&apos;t receive the code?{' '}
                         {countdown > 0 ? (
                             <span className="text-gray-400">Resend in {countdown}s</span>
                         ) : (
                             <button
                                 onClick={handleResend}
                                 disabled={isResending}
-                                className="text-primary-600 hover:text-primary-700 font-semibold"
+                                className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
                             >
                                 {isResending ? 'Sending...' : 'Resend'}
                             </button>
                         )}
                     </p>
 
-                    <p className="mt-4 text-sm text-gray-500">
-                        <Link to="/login" className="text-gray-600 hover:text-gray-900">← Back to sign in</Link>
+                    <p className="mt-4 text-sm">
+                        <Link to="/login" className="text-gray-500 hover:text-gray-800 transition-colors">← Back to sign in</Link>
                     </p>
                 </div>
             </div>

@@ -69,7 +69,8 @@ export default function ResetPasswordPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-primary-500 to-primary-700 -mx-8 -mt-8 mb-8" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Reset password</h2>
                     <p className="text-gray-500 text-sm mb-8">Enter the code sent to your email and choose a new password.</p>
 

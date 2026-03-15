@@ -8,15 +8,15 @@ export function EmptyState({
     className = '',
 }) {
     return (
-        <div className={clsx('flex flex-col items-center justify-center py-16 text-center', className)}>
+        <div className={clsx('flex flex-col items-center justify-center py-20 text-center', className)}>
             {Icon && (
-                <div className="mb-4 p-4 bg-gray-100 rounded-full">
-                    <Icon className="w-10 h-10 text-gray-400" />
+                <div className="mb-5 w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center shadow-sm">
+                    <Icon className="w-8 h-8 text-primary-500" />
                 </div>
             )}
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
             {description && (
-                <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
+                <p className="text-sm text-gray-500 max-w-xs leading-relaxed mb-6">{description}</p>
             )}
             {action}
         </div>

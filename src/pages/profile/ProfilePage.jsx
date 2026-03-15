@@ -59,25 +59,31 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-                <button onClick={() => navigate('/dashboard')} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+                <button
+                    onClick={() => navigate('/dashboard')}
+                    className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
                     <ArrowLeftIcon className="w-5 h-5" />
                 </button>
-                <h1 className="text-lg font-semibold text-gray-900">Profile Settings</h1>
+                <div>
+                    <h1 className="text-lg font-bold text-gray-900">Profile Settings</h1>
+                    <p className="text-xs text-gray-400">Manage your personal information</p>
+                </div>
             </header>
 
-            <main className="max-w-xl mx-auto py-8 px-4 space-y-6">
+            <main className="max-w-xl mx-auto py-8 px-4 space-y-5">
                 {/* Profile info */}
-                <section className="bg-white border border-gray-200 rounded-2xl p-6">
-                    <div className="flex items-center gap-4 mb-6">
+                <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
+                    <div className="flex items-center gap-4 pb-5 mb-5 border-b border-gray-100">
                         <Avatar user={user} size="lg" />
                         <div>
-                            <div className="font-semibold text-gray-900">{user?.firstName} {user?.lastName}</div>
-                            <div className="text-sm text-gray-500">{user?.email}</div>
+                            <div className="font-bold text-gray-900 text-base">{user?.firstName} {user?.lastName}</div>
+                            <div className="text-sm text-gray-500 mt-0.5">{user?.email}</div>
                         </div>
                     </div>
 
-                    <h2 className="text-base font-semibold text-gray-900 mb-4">Personal Information</h2>
+                    <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Personal Information</h2>
                     <form onSubmit={handleProfileSave} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <Input
@@ -93,14 +99,14 @@ export default function ProfilePage() {
                                 required
                             />
                         </div>
-                        <Input label="Email" value={user?.email} disabled />
+                        <Input label="Email" value={user?.email} disabled hint="Email cannot be changed" />
                         <Button type="submit" loading={isSavingProfile}>Save Changes</Button>
                     </form>
                 </section>
 
                 {/* Change password */}
-                <section className="bg-white border border-gray-200 rounded-2xl p-6">
-                    <h2 className="text-base font-semibold text-gray-900 mb-4">Change Password</h2>
+                <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
+                    <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Change Password</h2>
                     <form onSubmit={handlePasswordSave} className="space-y-4">
                         <Input
                             label="Current Password"

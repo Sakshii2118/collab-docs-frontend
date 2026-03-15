@@ -55,7 +55,7 @@ export default function ShareAccessPage() {
         setIsGranting(true)
         try {
             const result = await shareService.accessShareLink(token)
-            toast.success(result.hasPermissionGranted ? 'Access granted! Welcome 🎉' : 'Welcome back!')
+            toast.success(result.hasPermissionGranted ? 'Access granted! Welcome.' : 'Welcome back!')
             navigate(`/editor/${result.documentId}`)
         } catch (err) {
             handleAPIError(err)
@@ -115,87 +115,92 @@ export default function ShareAccessPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+                <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden text-center">
+                    <div className="h-1 bg-gradient-to-r from-primary-500 to-primary-700" />
+                    <div className="p-8">
 
-                    {/* Error state */}
-                    {error ? (
-                        <>
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
-                            </div>
-                            <h2 className="text-xl font-bold text-gray-900 mb-3">Invalid Link</h2>
-                            <p className="text-gray-500 mb-6">{error}</p>
-                            <Button onClick={() => navigate('/')}>Go Home</Button>
-                        </>
-                    ) : (
-                        <>
-                            {/* Icon */}
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${allowsGuest ? 'bg-green-100' : shareInfo?.requiresAuth ? 'bg-amber-100' : 'bg-primary-100'}`}>
-                                {allowsGuest
-                                    ? <EyeIcon className="w-8 h-8 text-green-600" />
-                                    : shareInfo?.requiresAuth
-                                        ? <LockClosedIcon className="w-8 h-8 text-amber-600" />
-                                        : <DocumentTextIcon className="w-8 h-8 text-primary-600" />
-                                }
-                            </div>
-
-                            <h2 className="text-xl font-bold text-gray-900 mb-2">
-                                {allowsGuest ? 'Document shared with you' : "You've been invited to collaborate"}
-                            </h2>
-
-                            {shareInfo?.documentTitle && (
-                                <p className="text-gray-700 font-semibold mb-1">{shareInfo.documentTitle}</p>
-                            )}
-
-                            <p className="text-sm text-gray-500 mb-2">
-                                Access level: <span className="font-medium text-gray-700">{shareInfo?.role}</span>
-                            </p>
-
-                            {shareInfo?.requiresAuth && !isAuthenticated && (
-                                <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4">
-                                    🔒 This link requires you to sign in before accessing the document.
-                                </p>
-                            )}
-
-                            {allowsGuest && !isAuthenticated && (
-                                <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2 mb-4">
-                                    🔓 This link is open — no account needed. You'll have read-only access.
-                                </p>
-                            )}
-
-                            {shareInfo?.expiresAt && (
-                                <p className="text-xs text-gray-400 mb-4">
-                                    Expires {new Date(shareInfo.expiresAt).toLocaleDateString()}
-                                </p>
-                            )}
-
-                            {/* Actions */}
-                            {isGranting ? (
-                                <div className="flex flex-col items-center gap-2 mt-4">
-                                    <Spinner size="md" color="primary" />
-                                    <p className="text-sm text-gray-500">Opening document...</p>
+                        {/* Error state */}
+                        {error ? (
+                            <>
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
                                 </div>
-                            ) : (
-                                <div className="flex flex-col gap-2 mt-4">
-                                    {/* Primary action */}
-                                    <Button onClick={handleAccess} className="w-full">
-                                        {isAuthenticated ? 'Open Document' : 'Sign in to Open'}
-                                    </Button>
-
-                                    {/* Guest option — only shown when link allows anonymous access and user isn't logged in */}
-                                    {allowsGuest && !isAuthenticated && (
-                                        <button
-                                            onClick={grantGuestAccess}
-                                            className="w-full px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                                        >
-                                            <EyeIcon className="w-4 h-4 inline mr-1.5" />
-                                            Open as Guest (view only)
-                                        </button>
-                                    )}
+                                <h2 className="text-xl font-bold text-gray-900 mb-3">Invalid Link</h2>
+                                <p className="text-gray-500 mb-6">{error}</p>
+                                <Button onClick={() => navigate('/')}>Go Home</Button>
+                            </>
+                        ) : (
+                            <>
+                                {/* Icon */}
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${allowsGuest ? 'bg-green-100' : shareInfo?.requiresAuth ? 'bg-amber-100' : 'bg-primary-100'}`}>
+                                    {allowsGuest
+                                        ? <EyeIcon className="w-8 h-8 text-green-600" />
+                                        : shareInfo?.requiresAuth
+                                            ? <LockClosedIcon className="w-8 h-8 text-amber-600" />
+                                            : <DocumentTextIcon className="w-8 h-8 text-primary-600" />
+                                    }
                                 </div>
-                            )}
-                        </>
-                    )}
+
+                                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                                    {allowsGuest ? 'Document shared with you' : "You've been invited to collaborate"}
+                                </h2>
+
+                                {shareInfo?.documentTitle && (
+                                    <p className="text-gray-700 font-semibold mb-1">{shareInfo.documentTitle}</p>
+                                )}
+
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Access level: <span className="font-medium text-gray-700">{shareInfo?.role}</span>
+                                </p>
+
+                                {shareInfo?.requiresAuth && !isAuthenticated && (
+                                    <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 mb-4">
+                                        <LockClosedIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <span>This link requires you to sign in before accessing the document.</span>
+                                    </div>
+                                )}
+
+                                {allowsGuest && !isAuthenticated && (
+                                    <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 mb-4">
+                                        <EyeIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <span>This link is open — no account needed. You'll have read-only access.</span>
+                                    </div>
+                                )}
+
+                                {shareInfo?.expiresAt && (
+                                    <p className="text-xs text-gray-400 mb-4">
+                                        Expires {new Date(shareInfo.expiresAt).toLocaleDateString()}
+                                    </p>
+                                )}
+
+                                {/* Actions */}
+                                {isGranting ? (
+                                    <div className="flex flex-col items-center gap-2 mt-4">
+                                        <Spinner size="md" color="primary" />
+                                        <p className="text-sm text-gray-500">Opening document...</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-2 mt-4">
+                                        {/* Primary action */}
+                                        <Button onClick={handleAccess} className="w-full">
+                                            {isAuthenticated ? 'Open Document' : 'Sign in to Open'}
+                                        </Button>
+
+                                        {/* Guest option — only shown when link allows anonymous access and user isn't logged in */}
+                                        {allowsGuest && !isAuthenticated && (
+                                            <button
+                                                onClick={grantGuestAccess}
+                                                className="w-full px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+                                            >
+                                                <EyeIcon className="w-4 h-4" />
+                                                Open as Guest (view only)
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

@@ -74,15 +74,18 @@ export default function VersionHistoryPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-200 px-6 py-4">
+            <header className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => navigate(`/editor/${documentId}`)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+                        <button
+                            onClick={() => navigate(`/editor/${documentId}`)}
+                            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                        >
                             <ArrowLeftIcon className="w-5 h-5" />
                         </button>
                         <div>
-                            <h1 className="text-lg font-semibold text-gray-900">Version History</h1>
-                            <p className="text-sm text-gray-500">{document?.title}</p>
+                            <h1 className="text-lg font-bold text-gray-900">Version History</h1>
+                            <p className="text-xs text-gray-400 truncate max-w-xs">{document?.title}</p>
                         </div>
                     </div>
                     <Button onClick={() => setShowCreateForm(true)} size="sm">
@@ -94,12 +97,13 @@ export default function VersionHistoryPage() {
             {/* Create version form */}
             {showCreateForm && (
                 <div className="max-w-2xl mx-auto pt-6 px-6">
-                    <form onSubmit={handleCreate} className="bg-white border border-primary-200 rounded-2xl p-5 space-y-4">
-                        <h2 className="font-semibold text-gray-900">Save a Version</h2>
+                    <form onSubmit={handleCreate} className="bg-white border border-primary-100 rounded-2xl p-5 space-y-4 shadow-card">
+                        <div className="h-0.5 bg-gradient-to-r from-primary-500 to-primary-700 -mx-5 -mt-5 mb-5 rounded-t-2xl" />
+                        <h2 className="font-bold text-gray-900">Save a Version</h2>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Version Name *</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Version Name *</label>
                             <input
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 transition-all"
                                 placeholder="e.g. Final Draft"
                                 value={versionName}
                                 onChange={e => setVersionName(e.target.value)}
@@ -108,9 +112,9 @@ export default function VersionHistoryPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Comment (optional)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Comment (optional)</label>
                             <input
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 transition-all"
                                 placeholder="e.g. Completed all revisions"
                                 value={comment}
                                 onChange={e => setComment(e.target.value)}
@@ -130,37 +134,48 @@ export default function VersionHistoryPage() {
                 ) : versions.length === 0 ? (
                     <EmptyState icon={ClockIcon} title="No versions yet" description="Save a version to create a checkpoint you can restore later." />
                 ) : (
-                    <div className="space-y-3">
-                        {versions.map((version, i) => (
-                            <div key={version.id} className="flex items-start justify-between bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
-                                <div className="flex-1 min-w-0">
-                                    {/* API field is versionName not label */}
-                                    <div className="font-medium text-gray-900">{version.versionName || `Version ${versions.length - i}`}</div>
-                                    {version.comment && (
-                                        <div className="text-sm text-gray-500 mt-0.5">{version.comment}</div>
-                                    )}
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <div className="text-xs text-gray-400">{formatDateTime(version.createdAt)}</div>
-                                        <span className="text-gray-300">·</span>
-                                        <div className="text-xs text-gray-400">{timeAgo(version.createdAt)}</div>
-                                        {version.createdBy && (
-                                            <>
-                                                <span className="text-gray-300">·</span>
-                                                <div className="text-xs text-gray-400">by {version.createdBy}</div>
-                                            </>
-                                        )}
+                    <div className="relative">
+                        {/* Timeline line */}
+                        <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-100" />
+                        <div className="space-y-4">
+                            {versions.map((version, i) => (
+                                <div key={version.id} className="flex items-start gap-4">
+                                    {/* Timeline dot */}
+                                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center z-10 shadow-sm ${i === 0 ? 'bg-primary-500' : 'bg-white border-2 border-gray-200'}`}>
+                                        <ClockIcon className={`w-4 h-4 ${i === 0 ? 'text-white' : 'text-gray-400'}`} />
+                                    </div>
+                                    <div className="flex-1 bg-white border border-gray-100 rounded-2xl p-4 shadow-card hover:shadow-card-hover transition-all duration-200">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-gray-900">{version.versionName || `Version ${versions.length - i}`}</div>
+                                                {version.comment && (
+                                                    <div className="text-sm text-gray-500 mt-0.5">{version.comment}</div>
+                                                )}
+                                                <div className="flex items-center gap-2 mt-1.5">
+                                                    <div className="text-xs text-gray-400">{formatDateTime(version.createdAt)}</div>
+                                                    <span className="text-gray-200">·</span>
+                                                    <div className="text-xs text-gray-400">{timeAgo(version.createdAt)}</div>
+                                                    {version.createdBy && (
+                                                        <>
+                                                            <span className="text-gray-200">·</span>
+                                                            <div className="text-xs text-gray-400">by {version.createdBy}</div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => setRestoreTarget(version)}
+                                                className="ml-4 shrink-0"
+                                            >
+                                                <ArrowUturnLeftIcon className="w-3.5 h-3.5" /> Restore
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => setRestoreTarget(version)}
-                                    className="ml-4 shrink-0"
-                                >
-                                    <ArrowUturnLeftIcon className="w-4 h-4" /> Restore
-                                </Button>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
             </main>

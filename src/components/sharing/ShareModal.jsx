@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { collaborationService } from '../../services/collaborationService'
 import { shareService } from '../../services/shareService'
 import { handleAPIError } from '../../utils/errorHandler'
-import { ClipboardDocumentIcon, TrashIcon, UserPlusIcon, LinkIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentIcon, TrashIcon, UserPlusIcon, LinkIcon, LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
 const ROLE_OPTIONS = ['EDITOR', 'VIEWER']
@@ -97,12 +97,12 @@ function InviteTab({ documentId }) {
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Current Collaborators</h4>
                     <div className="space-y-2">
                         {collaborators.map((c) => (
-                            <div key={c.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                            <div key={c.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                                 <div className="flex items-center gap-3">
                                     <Avatar user={{ id: c.userId, firstName: c.name?.split(' ')[0], lastName: c.name?.split(' ').slice(1).join(' ') }} size="sm" />
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900">{c.name || c.email}</div>
-                                        <div className="text-xs text-gray-500">{c.email}</div>
+                                        <div className="text-sm font-semibold text-gray-900">{c.name || c.email}</div>
+                                        <div className="text-xs text-gray-400">{c.email}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ function InviteTab({ documentId }) {
                                             <select
                                                 value={c.role}
                                                 onChange={(e) => updateRoleMutation.mutate({ userId: c.userId, newRole: e.target.value })}
-                                                className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 bg-white transition-all"
                                             >
                                                 {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                                             </select>
@@ -180,12 +180,15 @@ function ShareLinkTab({ documentId }) {
     return (
         <div className="p-6 space-y-4">
             {/* requiresAuth toggle */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                 <div>
-                    <div className="text-sm font-medium text-gray-800">
-                        {requiresAuth ? '🔒 Require sign-in' : '🔓 Open without login (view only)'}
+                    <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+                        {requiresAuth
+                            ? <><LockClosedIcon className="w-3.5 h-3.5 text-amber-500" /> Require sign-in</>
+                            : <><LockOpenIcon className="w-3.5 h-3.5 text-green-500" /> Open without login (view only)</>
+                        }
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className="text-xs text-gray-500 mt-0.5 pl-5">
                         {requiresAuth
                             ? 'Recipients must be logged in to access'
                             : 'Anyone with the link can view — role locked to VIEWER'}
@@ -226,17 +229,20 @@ function ShareLinkTab({ documentId }) {
             {links.length > 0 ? (
                 <div className="space-y-2">
                     {links.map((link) => (
-                        <div key={link.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                            <div>
-                                <div className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
-                                    {link.requiresAuth === false ? '🔓' : '🔒'}
+                        <div key={link.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <div className="min-w-0 flex-1">
+                                <div className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                                    {link.requiresAuth === false
+                                        ? <LockOpenIcon className="w-3.5 h-3.5 text-green-500" />
+                                        : <LockClosedIcon className="w-3.5 h-3.5 text-amber-500" />
+                                    }
                                     {link.role} access
                                 </div>
-                                <div className="text-xs text-gray-500 font-mono truncate max-w-xs">
+                                <div className="text-xs text-gray-400 font-mono truncate max-w-xs">
                                     {window.location.origin}/share/{link.token}
                                 </div>
                                 {link.expiresAt && (
-                                    <div className="text-xs text-amber-600">Expires: {new Date(link.expiresAt).toLocaleDateString()}</div>
+                                    <div className="text-xs text-amber-600 mt-0.5">Expires: {new Date(link.expiresAt).toLocaleDateString()}</div>
                                 )}
                             </div>
                             <div className="flex gap-2">

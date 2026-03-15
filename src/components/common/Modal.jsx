@@ -24,7 +24,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
                 </Transition.Child>
 
                 <div className="fixed inset-0 overflow-y-auto">
@@ -40,23 +40,26 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
                         >
                             <Dialog.Panel
                                 className={clsx(
-                                    'w-full bg-white rounded-2xl shadow-2xl',
-                                    'transform transition-all',
+                                    'w-full bg-white rounded-2xl shadow-2xl border border-gray-100',
+                                    'transform transition-all overflow-hidden',
                                     sizes[size],
                                 )}
                             >
+                                {/* Accent bar */}
+                                <div className="h-1 bg-gradient-to-r from-primary-500 to-primary-700" />
+
                                 {/* Header */}
                                 {(title || showClose) && (
                                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                                         {title && (
-                                            <Dialog.Title className="text-lg font-semibold text-gray-900">
+                                            <Dialog.Title className="text-base font-semibold text-gray-900">
                                                 {title}
                                             </Dialog.Title>
                                         )}
                                         {showClose && (
                                             <button
                                                 onClick={onClose}
-                                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ml-auto"
+                                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors ml-auto"
                                             >
                                                 <XMarkIcon className="w-5 h-5" />
                                             </button>

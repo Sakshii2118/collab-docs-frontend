@@ -9,10 +9,10 @@ function ToolbarButton({ onClick, active, disabled, title, children }) {
             disabled={disabled}
             title={title}
             className={clsx(
-                'p-1.5 rounded-lg text-sm font-medium transition-colors',
+                'p-1.5 rounded-lg text-sm font-medium transition-all duration-100',
                 active
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                    ? 'bg-primary-100 text-primary-700 shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
                 disabled && 'opacity-30 cursor-not-allowed',
             )}
         >
@@ -30,7 +30,7 @@ export function EditorMenuBar() {
     if (!editor) return null
 
     return (
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-2 shadow-sm">
             <div className="flex items-center gap-0.5 flex-wrap">
                 {/* History */}
                 <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo" disabled={!editor.can().undo()}>

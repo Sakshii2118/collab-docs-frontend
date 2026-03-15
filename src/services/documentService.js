@@ -1,7 +1,15 @@
 import api from './api'
 
 export const documentService = {
-    // ── 2.3 List User Documents ─────────────────────────────────────────────
+    // ── 2.3 List User Documents (with filter & search) ──────────────────────
+    // GET /api/documents/user/documents?page=&size=&search=
+    getDocuments: ({ filter, search, page = 0, size = 12 }) => {
+        const params = { page, size }
+        if (search) params.search = search
+        return api.get('/api/documents/user/documents', { params }).then(r => r.data)
+    },
+
+    // ── 2.3b List User Documents (legacy) ───────────────────────────────────
     // GET /api/documents/user/documents?page=&size=
     listDocuments: (params) =>
         api.get('/api/documents/user/documents', { params }).then(r => r.data),

@@ -12,9 +12,9 @@ import { Spinner } from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
 
 const VISIBILITY_OPTIONS = [
-    { value: 'PRIVATE', label: '🔒 Private' },
-    { value: 'SHARED', label: '👥 Shared' },
-    { value: 'PUBLIC', label: '🌐 Public' },
+    { value: 'PRIVATE', label: 'Private', icon: LockClosedIcon, desc: 'Only you can access' },
+    { value: 'SHARED', label: 'Shared', icon: UserGroupIcon, desc: 'Invited collaborators' },
+    { value: 'PUBLIC', label: 'Public', icon: GlobeAltIcon, desc: 'Anyone with the link' },
 ]
 
 export default function DocumentSettingsPage() {
@@ -77,17 +77,23 @@ export default function DocumentSettingsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-                <button onClick={() => navigate(`/editor/${documentId}`)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+                <button
+                    onClick={() => navigate(`/editor/${documentId}`)}
+                    className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
                     <ArrowLeftIcon className="w-5 h-5" />
                 </button>
-                <h1 className="text-lg font-semibold text-gray-900">Document Settings</h1>
+                <div>
+                    <h1 className="text-lg font-bold text-gray-900">Document Settings</h1>
+                    <p className="text-xs text-gray-400 truncate max-w-xs">{doc?.title}</p>
+                </div>
             </header>
 
-            <main className="max-w-xl mx-auto py-8 px-4 space-y-6">
+            <main className="max-w-xl mx-auto py-8 px-4 space-y-5">
                 {/* General */}
-                <section className="bg-white border border-gray-200 rounded-2xl p-6">
-                    <h2 className="text-base font-semibold text-gray-900 mb-5">General</h2>
+                <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
+                    <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5">General</h2>
                     <form onSubmit={handleSave} className="space-y-5">
                         <Input
                             label="Title"
@@ -97,14 +103,27 @@ export default function DocumentSettingsPage() {
                             placeholder="Document title"
                         />
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
-                            <div className="flex gap-2">
-                                {VISIBILITY_OPTIONS.map((opt) => (
-                                    <label key={opt.value} className={`flex-1 text-center py-2 px-3 rounded-xl border-2 cursor-pointer text-sm font-medium transition-all ${visibility === opt.value ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                                        <input type="radio" className="sr-only" value={opt.value} checked={visibility === opt.value} onChange={() => setVisibility(opt.value)} />
-                                        {opt.label}
-                                    </label>
-                                ))}
+                            <label className="block text-sm font-semibold text-gray-700 mb-3">Visibility</label>
+                            <div className="grid grid-cols-3 gap-3">
+                                {VISIBILITY_OPTIONS.map((opt) => {
+                                    const Icon = opt.icon
+                                    const active = visibility === opt.value
+                                    return (
+                                        <label
+                                            key={opt.value}
+                                            className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl border-2 cursor-pointer text-center transition-all duration-150
+                                                ${active
+                                                    ? 'border-primary-400 bg-primary-50'
+                                                    : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            <input type="radio" className="sr-only" value={opt.value} checked={active} onChange={() => setVisibility(opt.value)} />
+                                            <Icon className={`w-5 h-5 ${active ? 'text-primary-600' : 'text-gray-400'}`} />
+                                            <span className={`text-xs font-semibold ${active ? 'text-primary-700' : 'text-gray-600'}`}>{opt.label}</span>
+                                            <span className={`text-xs leading-tight ${active ? 'text-primary-400' : 'text-gray-400'}`}>{opt.desc}</span>
+                                        </label>
+                                    )
+                                })}
                             </div>
                         </div>
                         <Button type="submit" loading={updateMutation.isPending}>Save Changes</Button>
@@ -113,8 +132,8 @@ export default function DocumentSettingsPage() {
 
                 {/* Danger Zone — only for document owner */}
                 {isOwner && (
-                    <section className="bg-white border border-red-200 rounded-2xl p-6">
-                        <h2 className="text-base font-semibold text-red-700 mb-2">Danger Zone</h2>
+                    <section className="bg-white border border-red-100 rounded-2xl p-6 shadow-card">
+                        <h2 className="text-sm font-semibold text-red-600 uppercase tracking-wide mb-2">Danger Zone</h2>
                         <p className="text-sm text-gray-500 mb-4">Once you delete this document, there is no going back.</p>
                         <Button variant="danger" onClick={() => setShowDelete(true)}>
                             <TrashIcon className="w-4 h-4" /> Delete Document
