@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore'
 import { Spinner } from '../../components/common/Spinner'
 import { Button } from '../../components/common/Button'
 import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { getErrorMessage } from '../../utils/errorHandler'
 
 export default function InvitationRespondPage() {
     const { token } = useParams()
@@ -37,8 +38,7 @@ export default function InvitationRespondPage() {
                 }
                 setStatus('success')
             } catch (err) {
-                const msg = err?.response?.data?.message || 'Failed to process invitation. It may have expired or already been used.'
-                setError(msg)
+                setError(getErrorMessage(err))
                 setStatus('error')
             }
         }

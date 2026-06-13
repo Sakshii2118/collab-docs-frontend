@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftIcon, LinkIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, LinkIcon, TrashIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
 import { shareService } from '../../services/shareService'
 import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
-import { handleAPIError } from '../../utils/errorHandler'
+import { handleAPIError, getErrorMessage } from '../../utils/errorHandler'
 import { Spinner } from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
 
@@ -20,7 +20,7 @@ export default function ShareSettingsPage() {
     const [showShareLink, setShowShareLink] = useState(false)
     const [copied, setCopied] = useState(false)
 
-    const { data: doc, isLoading } = useQuery({
+    const { data: doc, isLoading, error: docError } = useQuery({
         queryKey: ['document', documentId],
         queryFn: () => documentService.getDocument(documentId),
     })
@@ -28,7 +28,10 @@ export default function ShareSettingsPage() {
     const isOwner = doc && user && doc.ownerEmail === user.email
 
     const generateLinkMutation = useMutation({
-        mutationFn: () => shareService.generateShareLink(documentId),
+        mutationFn: () => shareService.createShareLink(documentId, {
+            role: 'VIEWER',
+            requiresAuth: false,
+        }),
         onSuccess: (data) => {
             const link = `${window.location.origin}/share/${data.token}`
             setShareLink(link)
@@ -48,6 +51,32 @@ export default function ShareSettingsPage() {
         return <div className="h-screen flex items-center justify-center"><Spinner /></div>
     }
 
+    if (docError) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                        <ArrowLeftIcon className="w-5 h-5" />
+                    </button>
+                    <h1 className="text-lg font-bold text-gray-900">Share Settings</h1>
+                </header>
+                <div className="flex flex-col items-center justify-center h-96 gap-4">
+                    <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center">
+                        <LockClosedIcon className="w-7 h-7 text-red-500" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-gray-900 font-semibold">Unable to load document</p>
+                        <p className="text-gray-500 text-sm mt-1">{getErrorMessage(docError)}</p>
+                    </div>
+                    <Button onClick={() => navigate('/dashboard')} variant="secondary">Back to Dashboard</Button>
+                </div>
+            </div>
+        )
+    }
+
     if (!isOwner) {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -60,8 +89,15 @@ export default function ShareSettingsPage() {
                     </button>
                     <h1 className="text-lg font-bold text-gray-900">Share Settings</h1>
                 </header>
-                <div className="flex items-center justify-center h-96">
-                    <p className="text-gray-500">Only the document owner can manage sharing.</p>
+                <div className="flex flex-col items-center justify-center h-96 gap-4">
+                    <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center">
+                        <LockClosedIcon className="w-7 h-7 text-amber-600" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-gray-900 font-semibold">Access Restricted</p>
+                        <p className="text-gray-500 text-sm mt-1">Only the document owner can manage sharing settings.</p>
+                    </div>
+                    <Button onClick={() => navigate(`/editor/${documentId}`)} variant="secondary">Back to Editor</Button>
                 </div>
             </div>
         )

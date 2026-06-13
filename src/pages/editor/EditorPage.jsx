@@ -10,6 +10,8 @@ import { ActiveUsersList } from '../../components/editor/ActiveUsersList'
 import { ConnectionStatus } from '../../components/editor/ConnectionStatus'
 import { ShareModal } from '../../components/sharing/ShareModal'
 import { Spinner } from '../../components/common/Spinner'
+import { getErrorMessage } from '../../utils/errorHandler'
+import { ExclamationTriangleIcon, LockClosedIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 
 /**
  * Lightweight base64url-decode of JWT payload (no crypto verification).
@@ -62,9 +64,29 @@ export default function EditorPage() {
     }
 
     if (!isGuestSession && (error || !doc)) {
+        const httpStatus = error?.response?.status
+        const errMsg = error ? getErrorMessage(error) : 'Document could not be loaded.'
+        const is403 = httpStatus === 403
+        const is404 = httpStatus === 404
+
         return (
-            <div className="h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
-                <p className="text-red-500 font-medium">Document not found or access denied.</p>
+            <div className="h-screen flex flex-col items-center justify-center bg-gray-50 gap-5 px-4">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                    is403 ? 'bg-amber-100' : is404 ? 'bg-gray-100' : 'bg-red-100'
+                }`}>
+                    {is403
+                        ? <LockClosedIcon className="w-8 h-8 text-amber-600" />
+                        : is404
+                            ? <DocumentTextIcon className="w-8 h-8 text-gray-400" />
+                            : <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+                    }
+                </div>
+                <div className="text-center">
+                    <p className="text-gray-900 font-semibold text-lg">
+                        {is403 ? 'Access Denied' : is404 ? 'Document Not Found' : 'Something went wrong'}
+                    </p>
+                    <p className="text-gray-500 text-sm mt-1 max-w-sm">{errMsg}</p>
+                </div>
                 <button onClick={() => navigate('/dashboard')} className="btn-primary text-sm">
                     Back to Dashboard
                 </button>
