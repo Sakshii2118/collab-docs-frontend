@@ -94,40 +94,48 @@ export default function DocumentSettingsPage() {
                 {/* General */}
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
                     <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5">General</h2>
-                    <form onSubmit={handleSave} className="space-y-5">
-                        <Input
-                            label="Title"
-                            required
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Document title"
-                        />
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">Visibility</label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {VISIBILITY_OPTIONS.map((opt) => {
-                                    const Icon = opt.icon
-                                    const active = visibility === opt.value
-                                    return (
-                                        <label
-                                            key={opt.value}
-                                            className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl border-2 cursor-pointer text-center transition-all duration-150
-                                                ${active
-                                                    ? 'border-primary-400 bg-primary-50'
-                                                    : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            <input type="radio" className="sr-only" value={opt.value} checked={active} onChange={() => setVisibility(opt.value)} />
-                                            <Icon className={`w-5 h-5 ${active ? 'text-primary-600' : 'text-gray-400'}`} />
-                                            <span className={`text-xs font-semibold ${active ? 'text-primary-700' : 'text-gray-600'}`}>{opt.label}</span>
-                                            <span className={`text-xs leading-tight ${active ? 'text-primary-400' : 'text-gray-400'}`}>{opt.desc}</span>
-                                        </label>
-                                    )
-                                })}
+                    {!isOwner && (
+                        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                            Only the document owner can change the title or visibility.
+                        </p>
+                    )}
+                    <fieldset disabled={!isOwner} className="disabled:opacity-60">
+                        <form onSubmit={handleSave} className="space-y-5">
+                            <Input
+                                label="Title"
+                                required
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Document title"
+                            />
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-3">Visibility</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {VISIBILITY_OPTIONS.map((opt) => {
+                                        const Icon = opt.icon
+                                        const active = visibility === opt.value
+                                        return (
+                                            <label
+                                                key={opt.value}
+                                                className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl border-2 text-center transition-all duration-150
+                                                    ${isOwner ? 'cursor-pointer' : 'cursor-not-allowed'}
+                                                    ${active
+                                                        ? 'border-primary-400 bg-primary-50'
+                                                        : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                <input type="radio" className="sr-only" value={opt.value} checked={active} onChange={() => setVisibility(opt.value)} />
+                                                <Icon className={`w-5 h-5 ${active ? 'text-primary-600' : 'text-gray-400'}`} />
+                                                <span className={`text-xs font-semibold ${active ? 'text-primary-700' : 'text-gray-600'}`}>{opt.label}</span>
+                                                <span className={`text-xs leading-tight ${active ? 'text-primary-400' : 'text-gray-400'}`}>{opt.desc}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                        <Button type="submit" loading={updateMutation.isPending}>Save Changes</Button>
-                    </form>
+                            <Button type="submit" loading={updateMutation.isPending}>Save Changes</Button>
+                        </form>
+                    </fieldset>
                 </section>
 
                 {/* Danger Zone — only for document owner */}

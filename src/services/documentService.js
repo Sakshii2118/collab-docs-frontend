@@ -32,16 +32,24 @@ export const documentService = {
         api.get('/api/documents', { params: { document_id: id } }).then(r => r.data),
 
     // ── 2.5 Update Document (title / visibility) ────────────────────────────
-    // PUT /api/documents/{id}/visibility  — backend only exposes visibility update
-    // For title update, use updateTitle if backend adds it; for now proxy through visibility endpoint
-    updateDocument: (id, { title, visibility }) => {
-        // Backend currently only supports visibility update via PUT /api/documents/{id}/visibility
-        // Title changes are not yet exposed — update visibility if provided
-        if (visibility) {
-            return api.put(`/api/documents/${id}/visibility`, { visibility }).then(r => r.data)
+    // Title and visibility are separate backend endpoints; fire whichever
+    // fields were provided, in parallel, and resolve once both are done.
+    updateDocument: async (id, { title, visibility }) => {
+        const requests = []
+        if (title !== undefined && title !== null) {
+            requests.push(documentService.updateTitle(id, title))
         }
-        return Promise.resolve({ id, title, visibility })
+        if (visibility) {
+            requests.push(documentService.updateVisibility(id, visibility))
+        }
+        const results = await Promise.all(requests)
+        return results[results.length - 1]
     },
+
+    // ── 2.5a Update Title only ───────────────────────────────────────────────
+    // PUT /api/documents/{id}/title
+    updateTitle: (id, title) =>
+        api.put(`/api/documents/${id}/title`, { title }).then(r => r.data),
 
     // ── 2.5b Update Visibility only ─────────────────────────────────────────
     // PUT /api/documents/{id}/visibility
