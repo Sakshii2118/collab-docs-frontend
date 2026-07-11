@@ -16,7 +16,7 @@ const api = axios.create({
 // credentials," not "session expired."
 const REFRESH_EXEMPT_PATHS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register']
 
-function forceLogout() {
+export function forceLogout() {
     const currentPath = window.location.pathname
     useAuthStore.getState().logout()
     if (currentPath !== '/login' && currentPath !== '/register') {
@@ -25,14 +25,32 @@ function forceLogout() {
     }
 }
 
-// Concurrent 401s share a single in-flight refresh call instead of each
-// firing their own — otherwise N simultaneous requests failing at once would
-// race N separate refresh calls (and N rotations of the same refresh token,
-// most of which would then be rejected as reuse).
+// Concurrent refresh triggers (multiple failing requests, or a failing
+// request racing the proactive background renewal below) share a single
+// in-flight call instead of each firing their own — otherwise N simultaneous
+// callers would race N separate rotations of the same refresh token, and all
+// but one would then be rejected as reuse.
 let refreshPromise = null
 
 function isExemptPath(url = '') {
     return REFRESH_EXEMPT_PATHS.some((path) => url.includes(path))
+}
+
+/**
+ * Renew the access token and push the result into authStore. Shared by the
+ * reactive (401) and proactive (background timer, see App.jsx) refresh paths
+ * so they can never race each other into rotating the refresh token twice.
+ */
+export function refreshAccessToken() {
+    if (!refreshPromise) {
+        refreshPromise = api.post('/api/auth/refresh').finally(() => {
+            refreshPromise = null
+        })
+    }
+    return refreshPromise.then(({ data }) => {
+        useAuthStore.getState().setAuth(data, data.token)
+        return data
+    })
 }
 
 // Response interceptor: on 401, silently refresh the access token and retry
@@ -56,13 +74,7 @@ api.interceptors.response.use(
         originalRequest._retry = true
 
         try {
-            if (!refreshPromise) {
-                refreshPromise = api.post('/api/auth/refresh').finally(() => {
-                    refreshPromise = null
-                })
-            }
-            const { data } = await refreshPromise
-            useAuthStore.getState().setAuth(data, data.token)
+            await refreshAccessToken()
             return api(originalRequest)
         } catch (refreshError) {
             forceLogout()

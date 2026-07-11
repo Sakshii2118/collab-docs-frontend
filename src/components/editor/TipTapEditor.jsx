@@ -128,6 +128,24 @@ export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride }) {
         setProvider(p)
     }, [effectiveToken, yjsRoomId, ydoc])
 
+    // Keep the live provider's reconnect URL in sync with the latest access
+    // token. y-websocket bakes `params` into `provider.url` once at
+    // construction and only ever re-reads that exact string on reconnect —
+    // it never re-derives the URL from `params` itself (confirmed in
+    // node_modules/y-websocket/src/y-websocket.js: setupWS() does
+    // `new provider._WS(provider.url)` on every attempt, including the
+    // automatic exponential-backoff retries after a network blip). Without
+    // this, a provider created early in a long session keeps retrying
+    // reconnects with whatever token it started with — increasingly likely
+    // to be stale now that the access token only lives 15 minutes. Guest
+    // sessions use a fixed token and don't participate in refresh, so skip.
+    useEffect(() => {
+        if (tokenOverride || !providerRef.current || !effectiveToken) return
+        const p = providerRef.current
+        const base = p.url.split('?')[0]
+        p.url = `${base}?token=${encodeURIComponent(effectiveToken)}`
+    }, [effectiveToken, tokenOverride])
+
     // Cleanup on unmount — also null the ref so React StrictMode's double-invoke
     // of effects (dev only) can create a fresh provider on the second run.
     useEffect(() => {
