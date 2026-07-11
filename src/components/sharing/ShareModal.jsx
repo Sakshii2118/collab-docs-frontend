@@ -99,10 +99,10 @@ function InviteTab({ documentId }) {
                         {collaborators.map((c) => (
                             <div key={c.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
                                 <div className="flex items-center gap-3">
-                                    <Avatar user={{ id: c.userId, firstName: c.name?.split(' ')[0], lastName: c.name?.split(' ').slice(1).join(' ') }} size="sm" />
+                                    <Avatar user={{ id: c.userId, firstName: c.userName?.split(' ')[0], lastName: c.userName?.split(' ').slice(1).join(' ') }} size="sm" />
                                     <div>
-                                        <div className="text-sm font-semibold text-gray-900">{c.name || c.email}</div>
-                                        <div className="text-xs text-gray-400">{c.email}</div>
+                                        <div className="text-sm font-semibold text-gray-900">{c.userName || c.userEmail}</div>
+                                        <div className="text-xs text-gray-400">{c.userEmail}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">

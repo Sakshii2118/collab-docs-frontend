@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeftIcon, EllipsisVerticalIcon, ShareIcon, ClockIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, EllipsisVerticalIcon, ShareIcon, ClockIcon, Cog6ToothIcon, BookmarkIcon, ExclamationTriangleIcon, LockClosedIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 import { documentService } from '../../services/documentService'
 import { useAuthStore } from '../../store/authStore'
 import { TipTapEditor } from '../../components/editor/TipTapEditor'
@@ -10,8 +11,8 @@ import { ActiveUsersList } from '../../components/editor/ActiveUsersList'
 import { ConnectionStatus } from '../../components/editor/ConnectionStatus'
 import { ShareModal } from '../../components/sharing/ShareModal'
 import { Spinner } from '../../components/common/Spinner'
-import { getErrorMessage } from '../../utils/errorHandler'
-import { ExclamationTriangleIcon, LockClosedIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import { versionService } from '../../services/versionService'
+import { handleAPIError, getErrorMessage } from '../../utils/errorHandler'
 
 /**
  * Lightweight base64url-decode of JWT payload (no crypto verification).
@@ -32,6 +33,10 @@ export default function EditorPage() {
     const { user } = useAuthStore()
     const [showMenu, setShowMenu] = useState(false)
     const [showShare, setShowShare] = useState(false)
+    const [showSaveVersion, setShowSaveVersion] = useState(false)
+    const [versionName, setVersionName] = useState('')
+    const [versionNotes, setVersionNotes] = useState('')
+    const [isSavingVersion, setIsSavingVersion] = useState(false)
 
     // ── Guest session detection ───────────────────────────────────────────────
     // ShareAccessPage stores these in sessionStorage when granting anonymous access.
@@ -52,6 +57,27 @@ export default function EditorPage() {
 
     // Role: backend now returns userRole in DocumentResponse; guests are always VIEWER
     const role = isGuestSession ? 'VIEWER' : (doc?.userRole ?? 'VIEWER')
+    const canSaveVersion = !isGuestSession && (role === 'OWNER' || role === 'EDITOR')
+
+    const handleSaveVersion = async (e) => {
+        e.preventDefault()
+        if (!versionName.trim()) return
+        setIsSavingVersion(true)
+        try {
+            await versionService.createVersion(doc?.id ?? documentId, {
+                versionName: versionName.trim(),
+                changeNotes: versionNotes.trim() || undefined,
+            })
+            toast.success('Version saved!')
+            setShowSaveVersion(false)
+            setVersionName('')
+            setVersionNotes('')
+        } catch (err) {
+            handleAPIError(err)
+        } finally {
+            setIsSavingVersion(false)
+        }
+    }
 
     // --- Loading state (only for non-guest sessions)
     if (!isGuestSession && isLoading) {
@@ -160,6 +186,14 @@ export default function EditorPage() {
 
                                 {showMenu && (
                                     <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-50 animate-slide-down">
+                                        {canSaveVersion && (
+                                            <button
+                                                onClick={() => { setShowSaveVersion(true); setShowMenu(false) }}
+                                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                                            >
+                                                <BookmarkIcon className="w-4 h-4" /> Save Version
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => { setShowShare(true); setShowMenu(false) }}
                                             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
@@ -209,6 +243,67 @@ export default function EditorPage() {
                     isOpen={showShare}
                     onClose={() => setShowShare(false)}
                 />
+            )}
+
+            {/* Save Version Modal */}
+            {showSaveVersion && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="h-1 bg-gradient-to-r from-primary-500 to-primary-700" />
+                        <form onSubmit={handleSaveVersion} className="p-6 space-y-4">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center">
+                                    <BookmarkIcon className="w-5 h-5 text-primary-600" />
+                                </div>
+                                <div>
+                                    <h2 className="font-bold text-gray-900">Save Version</h2>
+                                    <p className="text-xs text-gray-400">Create a named checkpoint you can restore later</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Version Name *</label>
+                                <input
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 transition-all"
+                                    placeholder="e.g. Final Draft, Before Review…"
+                                    value={versionName}
+                                    onChange={e => setVersionName(e.target.value)}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes <span className="font-normal text-gray-400">(optional)</span></label>
+                                <input
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-400 transition-all"
+                                    placeholder="What changed in this version?"
+                                    value={versionNotes}
+                                    onChange={e => setVersionNotes(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex gap-2 justify-end pt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowSaveVersion(false); setVersionName(''); setVersionNotes('') }}
+                                    className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                                    disabled={isSavingVersion}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!versionName.trim() || isSavingVersion}
+                                    className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                >
+                                    {isSavingVersion ? (
+                                        <><Spinner size="sm" color="white" /> Saving…</>
+                                    ) : (
+                                        <><BookmarkIcon className="w-4 h-4" /> Save Version</>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
 
             {/* Close menu on outside click */}

@@ -28,22 +28,25 @@ export default function VersionHistoryPage() {
         queryFn: () => documentService.getDocument(documentId),
     })
 
-    // API response shape: { documentId, totalVersions, versions: [...] }
+    // API returns Spring Page<VersionResponse> (has .content[]) when paginated,
+    // or plain List<VersionResponse> when unpaginated (page<0 or size<=0).
+    // We normalise both shapes here.
     const { data: versionData, isLoading } = useQuery({
         queryKey: ['versions', documentId],
         queryFn: () => versionService.listVersions(documentId),
     })
-    const versions = versionData?.versions || []
+    const versions = versionData?.content ?? versionData?.versions ?? (Array.isArray(versionData) ? versionData : [])
 
     const handleCreate = async (e) => {
         e.preventDefault()
         if (!versionName.trim()) return
         setIsCreating(true)
         try {
-            // API 4.1: body requires { versionName, comment? }
+            // API 4.1: body fields are { versionName, changeNotes? }
+            // (NOT "comment" — backend DTO uses "changeNotes")
             await versionService.createVersion(documentId, {
                 versionName: versionName.trim(),
-                comment: comment.trim() || undefined,
+                changeNotes: comment.trim() || undefined,
             })
             toast.success('Version saved')
             queryClient.invalidateQueries(['versions', documentId])
@@ -148,17 +151,17 @@ export default function VersionHistoryPage() {
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-bold text-gray-900">{version.versionName || `Version ${versions.length - i}`}</div>
-                                                {version.comment && (
-                                                    <div className="text-sm text-gray-500 mt-0.5">{version.comment}</div>
+                                                {version.changeNotes && (
+                                                    <div className="text-sm text-gray-500 mt-0.5">{version.changeNotes}</div>
                                                 )}
                                                 <div className="flex items-center gap-2 mt-1.5">
                                                     <div className="text-xs text-gray-400">{formatDateTime(version.createdAt)}</div>
                                                     <span className="text-gray-200">·</span>
                                                     <div className="text-xs text-gray-400">{timeAgo(version.createdAt)}</div>
-                                                    {version.createdBy && (
+                                                    {version.createdByName && (
                                                         <>
                                                             <span className="text-gray-200">·</span>
-                                                            <div className="text-xs text-gray-400">by {version.createdBy}</div>
+                                                            <div className="text-xs text-gray-400">by {version.createdByName}</div>
                                                         </>
                                                     )}
                                                 </div>
