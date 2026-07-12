@@ -186,7 +186,7 @@ export default function DashboardPage() {
                                 {FILTERS.find(f => f.key === filter)?.label || 'Documents'}
                             </h1>
                             <p className="text-xs text-gray-400 hidden sm:block">
-                                {data?.data?.totalElements ?? '—'} document{data?.data?.totalElements !== 1 ? 's' : ''}
+                                {data?.totalElements ?? '—'} document{data?.totalElements !== 1 ? 's' : ''}
                             </p>
                         </div>
                     </div>

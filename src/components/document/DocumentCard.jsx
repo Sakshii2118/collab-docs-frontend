@@ -7,7 +7,6 @@ import { RoleBadge } from '../common/Badge'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { documentService } from '../../services/documentService'
 import { useDocumentStore } from '../../store/documentStore'
-import { useAuthStore } from '../../store/authStore'
 import { handleAPIError } from '../../utils/errorHandler'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -21,15 +20,14 @@ const VISIBILITY_COLORS = {
 
 export function DocumentCard({ document, onDelete }) {
     const navigate = useNavigate()
-    const { user } = useAuthStore()
     const { toggleStar } = useDocumentStore()
     const queryClient = useQueryClient()
     const [showMenu, setShowMenu] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
-    // Derive ownership since backend has no role field in DocumentResponse
-    const isOwner = user && document.ownerEmail === user.email
+    // Ownership is resolved server-side (RBAC) and returned as userRole
+    const isOwner = document.userRole === 'OWNER'
 
     const handleClick = () => navigate(`/editor/${document.id}`)
 

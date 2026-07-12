@@ -2,10 +2,15 @@ import api from './api'
 
 export const documentService = {
     // ── 2.3 List User Documents (with filter & search) ──────────────────────
-    // GET /api/documents/user/documents?page=&size=&search=
+    // GET /api/documents/user/documents?page=&size=&ownedDocuments=
+    // `filter === 'owned'` maps to the backend's ownedDocuments flag, which
+    // restricts the result to documents the user actually owns (RBAC-checked
+    // server-side). Other filter values fall back to the default "all
+    // accessible" set — the backend has no dedicated support for them yet.
     getDocuments: ({ filter, search, page = 0, size = 12 }) => {
         const params = { page, size }
         if (search) params.search = search
+        if (filter === 'owned') params.ownedDocuments = true
         return api.get('/api/documents/user/documents', { params }).then(r => r.data)
     },
 

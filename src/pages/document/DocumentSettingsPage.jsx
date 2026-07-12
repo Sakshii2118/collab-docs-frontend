@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon, TrashIcon, LockClosedIcon, UserGroupIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
-import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { ConfirmDialog } from '../../components/common/ConfirmDialog'
@@ -20,7 +19,6 @@ const VISIBILITY_OPTIONS = [
 export default function DocumentSettingsPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
-    const { user } = useAuthStore()
     const queryClient = useQueryClient()
     const [showDelete, setShowDelete] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -39,8 +37,8 @@ export default function DocumentSettingsPage() {
         setVisibility(doc.visibility || 'PRIVATE')
     }
 
-    // Derive ownership since backend DocumentResponse has no role field
-    const isOwner = doc && user && doc.ownerEmail === user.email
+    // Ownership is resolved server-side (RBAC) and returned as userRole
+    const isOwner = doc?.userRole === 'OWNER'
 
     const updateMutation = useMutation({
         mutationFn: (data) => documentService.updateDocument(documentId, data),

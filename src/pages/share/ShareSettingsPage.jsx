@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon, LinkIcon, TrashIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
 import { shareService } from '../../services/shareService'
-import { useAuthStore } from '../../store/authStore'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { handleAPIError, getErrorMessage } from '../../utils/errorHandler'
@@ -14,7 +13,6 @@ import toast from 'react-hot-toast'
 export default function ShareSettingsPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
-    const { user } = useAuthStore()
     const queryClient = useQueryClient()
     const [shareLink, setShareLink] = useState('')
     const [showShareLink, setShowShareLink] = useState(false)
@@ -25,7 +23,8 @@ export default function ShareSettingsPage() {
         queryFn: () => documentService.getDocument(documentId),
     })
 
-    const isOwner = doc && user && doc.ownerEmail === user.email
+    // Ownership is resolved server-side (RBAC) and returned as userRole
+    const isOwner = doc?.userRole === 'OWNER'
 
     const generateLinkMutation = useMutation({
         mutationFn: () => shareService.createShareLink(documentId, {
