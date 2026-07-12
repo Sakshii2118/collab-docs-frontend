@@ -19,13 +19,18 @@ import { handleAPIError, getErrorMessage } from '../../utils/errorHandler'
 import toast from 'react-hot-toast'
 
 const FILTERS = [
+    { key: 'recent', label: 'Recent', icon: ClockIcon },
     { key: 'all', label: 'All Documents', icon: FolderIcon },
     { key: 'owned', label: 'My Documents', icon: DocumentTextIcon },
     { key: 'shared', label: 'Shared with Me', icon: UserCircleIcon },
-    { key: 'recent', label: 'Recent', icon: ClockIcon },
     { key: 'favourites', label: 'Favourites', icon: StarIcon },
     { key: 'trash', label: 'Trash', icon: TrashIcon },
 ]
+
+// Filters where creating a document from the empty state makes sense —
+// everywhere else (shared/favourites/trash) an empty result just means
+// "nothing matches this view," not "you have no documents."
+const CREATE_ELIGIBLE_FILTERS = ['all', 'owned', 'recent']
 
 const NAV_BOTTOM = [
     { to: '/invitations', label: 'Invitations', icon: EnvelopeIcon },
@@ -35,7 +40,7 @@ const NAV_BOTTOM = [
 export default function DashboardPage() {
     const navigate = useNavigate()
     const { user, logout } = useAuthStore()
-    const [filter, setFilter] = useState('all')
+    const [filter, setFilter] = useState('recent')
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(0)
     const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -50,6 +55,7 @@ export default function DashboardPage() {
     })
 
     const documents = data?.content || []
+    const canCreateFromEmpty = CREATE_ELIGIBLE_FILTERS.includes(filter)
     const totalPages = data?.totalPages || 0
 
     const handleSignOut = async () => {
@@ -231,10 +237,16 @@ export default function DashboardPage() {
                     ) : documents.length === 0 ? (
                         <EmptyState
                             icon={DocumentTextIcon}
-                            title={search ? 'No documents found' : 'No documents yet'}
-                            description={search ? `No results for "${search}".` : 'Create your first document to get started.'}
+                            title={search || !canCreateFromEmpty ? 'No documents found' : 'No documents yet'}
+                            description={
+                                search
+                                    ? `No results for "${search}".`
+                                    : canCreateFromEmpty
+                                        ? 'Create your first document to get started.'
+                                        : 'No documents found for this view.'
+                            }
                             action={
-                                !search && (
+                                !search && canCreateFromEmpty && (
                                     <Button onClick={() => setShowCreateModal(true)}>
                                         <PlusIcon className="w-4 h-4" />
                                         Create Document
