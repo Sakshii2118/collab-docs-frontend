@@ -37,6 +37,7 @@ export default function EditorPage() {
     const [versionName, setVersionName] = useState('')
     const [versionNotes, setVersionNotes] = useState('')
     const [isSavingVersion, setIsSavingVersion] = useState(false)
+    const [accessRevokedReason, setAccessRevokedReason] = useState(null)
 
     // ── Guest session detection ───────────────────────────────────────────────
     // ShareAccessPage stores these in sessionStorage when granting anonymous access.
@@ -85,6 +86,26 @@ export default function EditorPage() {
         } finally {
             setIsSavingVersion(false)
         }
+    }
+
+    // Server force-closed the live session — document was deleted or this
+    // user's access was removed while they were editing. Takes priority over
+    // every other state since it can happen mid-session, not just on load.
+    if (accessRevokedReason) {
+        return (
+            <div className="h-screen flex flex-col items-center justify-center bg-gray-50 gap-5 px-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-amber-100">
+                    <LockClosedIcon className="w-8 h-8 text-amber-600" />
+                </div>
+                <div className="text-center">
+                    <p className="text-gray-900 font-semibold text-lg">Access Changed</p>
+                    <p className="text-gray-500 text-sm mt-1 max-w-sm">{accessRevokedReason}</p>
+                </div>
+                <button onClick={() => navigate('/dashboard')} className="btn-primary text-sm">
+                    Back to Dashboard
+                </button>
+            </div>
+        )
     }
 
     // --- Loading state (only for non-guest sessions)
@@ -239,6 +260,7 @@ export default function EditorPage() {
                         yjsRoomId={yjsRoomId}
                         role={role}
                         tokenOverride={isGuestSession ? guestToken : undefined}
+                        onAccessRevoked={setAccessRevokedReason}
                     />
                 </div>
             </div>

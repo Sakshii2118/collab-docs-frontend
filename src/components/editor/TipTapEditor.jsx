@@ -16,6 +16,12 @@ import { generateUserColor } from '../../utils/colors'
 import { WS_URL } from '../../utils/constants'
 import { Spinner } from '../common/Spinner'
 
+// Custom WebSocket close code the yjs-service uses for "you lost access to
+// this document" (see yjs-service/services/documentEventSubscriber.js) —
+// distinct from a normal network drop, which y-websocket auto-reconnects
+// from by design.
+const ACCESS_LOST_CLOSE_CODE = 4001
+
 // ── Inner component: only mounted once provider (and therefore awareness) ──
 // exists. This avoids CollaborationCursor being configured with a null provider.
 function EditorInner({ ydoc, provider, role, user }) {
@@ -102,7 +108,9 @@ function EditorInner({ ydoc, provider, role, user }) {
 
 // ── Outer component: waits for token, then creates provider ──────────────────
 // `tokenOverride` allows guest sessions to bypass the authStore token.
-export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride }) {
+// `onAccessRevoked(reason)` fires when the server force-closes the session
+// because the document was deleted or this user's access was removed.
+export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride, onAccessRevoked }) {
     const { user, token: authToken } = useAuthStore()
     const effectiveToken = tokenOverride ?? authToken
     const { cleanup } = useEditorStore()
@@ -145,6 +153,23 @@ export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride }) {
         const base = p.url.split('?')[0]
         p.url = `${base}?token=${encodeURIComponent(effectiveToken)}`
     }, [effectiveToken, tokenOverride])
+
+    // Handle a forced close from the server (document deleted / access
+    // revoked, broadcast in real time via yjs-service's Redis subscriber).
+    // provider.disconnect() sets shouldConnect = false, which is essential
+    // here — without it, y-websocket's default retry-on-close behavior would
+    // just reconnect and get force-closed again in a loop.
+    useEffect(() => {
+        if (!provider) return
+        const handleConnectionClose = (event) => {
+            if (event?.code === ACCESS_LOST_CLOSE_CODE) {
+                provider.disconnect()
+                onAccessRevoked?.(event.reason || 'Your access to this document has changed.')
+            }
+        }
+        provider.on('connection-close', handleConnectionClose)
+        return () => provider.off('connection-close', handleConnectionClose)
+    }, [provider, onAccessRevoked])
 
     // Cleanup on unmount — also null the ref so React StrictMode's double-invoke
     // of effects (dev only) can create a fresh provider on the second run.
