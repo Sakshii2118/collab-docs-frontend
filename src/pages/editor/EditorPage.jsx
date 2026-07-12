@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, EllipsisVerticalIcon, ShareIcon, ClockIcon, Cog6ToothIcon, BookmarkIcon, ExclamationTriangleIcon, LockClosedIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
@@ -58,6 +58,14 @@ export default function EditorPage() {
     // Role: backend now returns userRole in DocumentResponse; guests are always VIEWER
     const role = isGuestSession ? 'VIEWER' : (doc?.userRole ?? 'VIEWER')
     const canSaveVersion = !isGuestSession && (role === 'OWNER' || role === 'EDITOR')
+
+    // Record this open for the "Recent" list. Fire-and-forget — guests have no
+    // real user JWT and aren't tracked, and a failure here shouldn't block
+    // or interrupt the actual editor experience.
+    useEffect(() => {
+        if (isGuestSession || !doc?.id) return
+        documentService.recordOpen(doc.id).catch(() => {})
+    }, [isGuestSession, doc?.id])
 
     const handleSaveVersion = async (e) => {
         e.preventDefault()

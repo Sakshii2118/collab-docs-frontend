@@ -2,14 +2,14 @@ import api from './api'
 
 export const documentService = {
     // ── 2.3 List User Documents (with filter & search) ──────────────────────
-    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED|STARRED
+    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED|STARRED|RECENT
     // `filter` maps 1:1 to the backend's DocumentFilter enum (uppercased).
-    // Other sidebar filter values (recent/trash) have no dedicated backend
-    // support yet and fall back to ALL.
+    // The 'trash' sidebar filter has no dedicated backend support yet and
+    // falls back to ALL.
     getDocuments: ({ filter, search, page = 0, size = 12 }) => {
         const params = { page, size }
         if (search) params.search = search
-        if (filter === 'owned' || filter === 'shared' || filter === 'starred') {
+        if (filter === 'owned' || filter === 'shared' || filter === 'starred' || filter === 'recent') {
             params.filter = filter.toUpperCase()
         }
         return api.get('/api/documents/user/documents', { params }).then(r => r.data)
@@ -70,4 +70,8 @@ export const documentService = {
     // POST/DELETE /api/documents/{id}/star
     starDocument: (id) => api.post(`/api/documents/${id}/star`).then(r => r.data),
     unstarDocument: (id) => api.delete(`/api/documents/${id}/star`).then(r => r.data),
+
+    // ── 2.8 Record Document Open (for "Recent") ──────────────────────────────
+    // POST /api/documents/{id}/open
+    recordOpen: (id) => api.post(`/api/documents/${id}/open`).then(r => r.data),
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarIcon, UserGroupIcon, StarIcon, EllipsisVerticalIcon, TrashIcon, Cog6ToothIcon, ShareIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, ClockIcon, UserGroupIcon, StarIcon, EllipsisVerticalIcon, TrashIcon, Cog6ToothIcon, ShareIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { timeAgo, formatBytes } from '../../utils/formatters'
 import { RoleBadge } from '../common/Badge'
@@ -136,14 +136,22 @@ export function DocumentCard({ document, onDelete }) {
                 </div>
 
                 {/* Meta */}
-                <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>{timeAgo(document.updatedAt)}</span>
-                    {document.fileSize > 0 && (
-                        <>
-                            <span className="text-gray-200">·</span>
-                            <span>{formatBytes(document.fileSize)}</span>
-                        </>
+                <div className="mb-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>Updated {timeAgo(document.updatedAt)}</span>
+                        {document.fileSize > 0 && (
+                            <>
+                                <span className="text-gray-200">·</span>
+                                <span>{formatBytes(document.fileSize)}</span>
+                            </>
+                        )}
+                    </div>
+                    {document.lastOpenedAt && (
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <ClockIcon className="w-3.5 h-3.5" />
+                            <span>Opened {timeAgo(document.lastOpenedAt)}</span>
+                        </div>
                     )}
                 </div>
 
