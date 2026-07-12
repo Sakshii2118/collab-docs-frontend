@@ -27,12 +27,5 @@ export const useDocumentStore = create((set) => ({
             documents: state.documents.filter((doc) => doc.id !== id),
         })),
 
-    toggleStar: (id) =>
-        set((state) => ({
-            documents: state.documents.map((doc) =>
-                doc.id === id ? { ...doc, isStarred: !doc.isStarred } : doc
-            ),
-        })),
-
     setIsLoading: (isLoading) => set({ isLoading }),
 }))

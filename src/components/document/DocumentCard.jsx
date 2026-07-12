@@ -6,9 +6,8 @@ import { timeAgo, formatBytes } from '../../utils/formatters'
 import { RoleBadge } from '../common/Badge'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { documentService } from '../../services/documentService'
-import { useDocumentStore } from '../../store/documentStore'
 import { handleAPIError } from '../../utils/errorHandler'
-import { useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { clsx } from 'clsx'
 
@@ -20,7 +19,6 @@ const VISIBILITY_COLORS = {
 
 export function DocumentCard({ document, onDelete }) {
     const navigate = useNavigate()
-    const { toggleStar } = useDocumentStore()
     const queryClient = useQueryClient()
     const [showMenu, setShowMenu] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -29,11 +27,19 @@ export function DocumentCard({ document, onDelete }) {
     // Ownership is resolved server-side (RBAC) and returned as userRole
     const isOwner = document.userRole === 'OWNER'
 
+    const starMutation = useMutation({
+        mutationFn: () => document.isStarred
+            ? documentService.unstarDocument(document.id)
+            : documentService.starDocument(document.id),
+        onSuccess: () => queryClient.invalidateQueries(['documents']),
+        onError: handleAPIError,
+    })
+
     const handleClick = () => navigate(`/editor/${document.id}`)
 
     const handleStar = (e) => {
         e.stopPropagation()
-        toggleStar(document.id)
+        starMutation.mutate()
     }
 
     const handleDelete = async () => {
@@ -78,7 +84,8 @@ export function DocumentCard({ document, onDelete }) {
                     <div className="flex items-center gap-0.5 flex-shrink-0 ml-2">
                         <button
                             onClick={handleStar}
-                            className="p-1.5 rounded-xl text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 transition-colors"
+                            disabled={starMutation.isPending}
+                            className="p-1.5 rounded-xl text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50"
                         >
                             {document.isStarred
                                 ? <StarIconSolid className="w-4 h-4 text-yellow-400" />

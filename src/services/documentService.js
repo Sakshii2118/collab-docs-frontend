@@ -2,14 +2,16 @@ import api from './api'
 
 export const documentService = {
     // ── 2.3 List User Documents (with filter & search) ──────────────────────
-    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED
+    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED|STARRED
     // `filter` maps 1:1 to the backend's DocumentFilter enum (uppercased).
-    // Other sidebar filter values (recent/starred/trash) have no dedicated
-    // backend support yet and fall back to ALL.
+    // Other sidebar filter values (recent/trash) have no dedicated backend
+    // support yet and fall back to ALL.
     getDocuments: ({ filter, search, page = 0, size = 12 }) => {
         const params = { page, size }
         if (search) params.search = search
-        if (filter === 'owned' || filter === 'shared') params.filter = filter.toUpperCase()
+        if (filter === 'owned' || filter === 'shared' || filter === 'starred') {
+            params.filter = filter.toUpperCase()
+        }
         return api.get('/api/documents/user/documents', { params }).then(r => r.data)
     },
 
@@ -63,4 +65,9 @@ export const documentService = {
     // ── 2.6 Delete Document (Soft Delete) ───────────────────────────────────
     // DELETE /api/documents/{id}
     deleteDocument: (id) => api.delete(`/api/documents/${id}`).then(r => r.data),
+
+    // ── 2.7 Star / Unstar Document ───────────────────────────────────────────
+    // POST/DELETE /api/documents/{id}/star
+    starDocument: (id) => api.post(`/api/documents/${id}/star`).then(r => r.data),
+    unstarDocument: (id) => api.delete(`/api/documents/${id}/star`).then(r => r.data),
 }
