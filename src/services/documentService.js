@@ -3,13 +3,16 @@ import api from './api'
 export const documentService = {
     // ── 2.3 List User Documents (with filter & search) ──────────────────────
     // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED|STARRED|RECENT
-    // `filter` maps 1:1 to the backend's DocumentFilter enum (uppercased).
-    // The 'trash' sidebar filter has no dedicated backend support yet and
-    // falls back to ALL.
+    // `filter` maps to the backend's DocumentFilter enum. The UI calls
+    // STARRED "Favourites" — 'favourites' is a frontend-only label, mapped
+    // here to the backend's actual enum value. The 'trash' sidebar filter
+    // has no dedicated backend support yet and falls back to ALL.
     getDocuments: ({ filter, search, page = 0, size = 12 }) => {
         const params = { page, size }
         if (search) params.search = search
-        if (filter === 'owned' || filter === 'shared' || filter === 'starred' || filter === 'recent') {
+        if (filter === 'favourites') {
+            params.filter = 'STARRED'
+        } else if (filter === 'owned' || filter === 'shared' || filter === 'recent') {
             params.filter = filter.toUpperCase()
         }
         return api.get('/api/documents/user/documents', { params }).then(r => r.data)
@@ -66,10 +69,11 @@ export const documentService = {
     // DELETE /api/documents/{id}
     deleteDocument: (id) => api.delete(`/api/documents/${id}`).then(r => r.data),
 
-    // ── 2.7 Star / Unstar Document ───────────────────────────────────────────
-    // POST/DELETE /api/documents/{id}/star
-    starDocument: (id) => api.post(`/api/documents/${id}/star`).then(r => r.data),
-    unstarDocument: (id) => api.delete(`/api/documents/${id}/star`).then(r => r.data),
+    // ── 2.7 Favourite / Unfavourite Document ─────────────────────────────────
+    // POST/DELETE /api/documents/{id}/star (backend endpoint path is
+    // unchanged — "Favourites" is a frontend-only rename of "Starred")
+    favouriteDocument: (id) => api.post(`/api/documents/${id}/star`).then(r => r.data),
+    unfavouriteDocument: (id) => api.delete(`/api/documents/${id}/star`).then(r => r.data),
 
     // ── 2.8 Record Document Open (for "Recent") ──────────────────────────────
     // POST /api/documents/{id}/open

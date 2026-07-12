@@ -23,7 +23,7 @@ const FILTERS = [
     { key: 'owned', label: 'My Documents', icon: DocumentTextIcon },
     { key: 'shared', label: 'Shared with Me', icon: UserCircleIcon },
     { key: 'recent', label: 'Recent', icon: ClockIcon },
-    { key: 'starred', label: 'Starred', icon: StarIcon },
+    { key: 'favourites', label: 'Favourites', icon: StarIcon },
     { key: 'trash', label: 'Trash', icon: TrashIcon },
 ]
 

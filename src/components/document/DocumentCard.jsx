@@ -27,19 +27,19 @@ export function DocumentCard({ document, onDelete }) {
     // Ownership is resolved server-side (RBAC) and returned as userRole
     const isOwner = document.userRole === 'OWNER'
 
-    const starMutation = useMutation({
+    const favouriteMutation = useMutation({
         mutationFn: () => document.isStarred
-            ? documentService.unstarDocument(document.id)
-            : documentService.starDocument(document.id),
+            ? documentService.unfavouriteDocument(document.id)
+            : documentService.favouriteDocument(document.id),
         onSuccess: () => queryClient.invalidateQueries(['documents']),
         onError: handleAPIError,
     })
 
     const handleClick = () => navigate(`/editor/${document.id}`)
 
-    const handleStar = (e) => {
+    const handleFavourite = (e) => {
         e.stopPropagation()
-        starMutation.mutate()
+        favouriteMutation.mutate()
     }
 
     const handleDelete = async () => {
@@ -83,8 +83,9 @@ export function DocumentCard({ document, onDelete }) {
 
                     <div className="flex items-center gap-0.5 flex-shrink-0 ml-2">
                         <button
-                            onClick={handleStar}
-                            disabled={starMutation.isPending}
+                            onClick={handleFavourite}
+                            disabled={favouriteMutation.isPending}
+                            title={document.isStarred ? 'Remove from favourites' : 'Add to favourites'}
                             className="p-1.5 rounded-xl text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50"
                         >
                             {document.isStarred
