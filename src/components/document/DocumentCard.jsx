@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarIcon, ClockIcon, UserGroupIcon, StarIcon, EllipsisVerticalIcon, TrashIcon, Cog6ToothIcon, ShareIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, ClockIcon, StarIcon, EllipsisVerticalIcon, TrashIcon, Cog6ToothIcon, ShareIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+import { differenceInDays, parseISO } from 'date-fns'
 import { timeAgo, formatBytes } from '../../utils/formatters'
 import { RoleBadge } from '../common/Badge'
 import { ConfirmDialog } from '../common/ConfirmDialog'
+import { Button } from '../common/Button'
 import { documentService } from '../../services/documentService'
 import { handleAPIError } from '../../utils/errorHandler'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -17,12 +19,26 @@ const VISIBILITY_COLORS = {
     PRIVATE: 'text-gray-500 bg-gray-50 border border-gray-100',
 }
 
-export function DocumentCard({ document, onDelete }) {
+// Must match the backend's app.recycle-bin.retention-days default — the
+// frontend has no way to read that config value, so this is just the
+// display copy ("permanently deleted in N days"), not enforcement.
+const RECYCLE_BIN_RETENTION_DAYS = 15
+
+export function DocumentCard({ document, onDelete, isTrashView = false }) {
+    if (isTrashView) {
+        return <TrashDocumentCard document={document} />
+    }
+    return <ActiveDocumentCard document={document} onDelete={onDelete} />
+}
+
+function ActiveDocumentCard({ document, onDelete }) {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [showMenu, setShowMenu] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isRemoving, setIsRemoving] = useState(false)
 
     // Ownership is resolved server-side (RBAC) and returned as userRole
     const isOwner = document.userRole === 'OWNER'
@@ -46,7 +62,7 @@ export function DocumentCard({ document, onDelete }) {
         setIsDeleting(true)
         try {
             await documentService.deleteDocument(document.id)
-            toast.success('Document deleted')
+            toast.success('Document moved to Recycle Bin')
             queryClient.invalidateQueries(['documents'])
             onDelete?.(document.id)
         } catch (error) {
@@ -54,6 +70,21 @@ export function DocumentCard({ document, onDelete }) {
         } finally {
             setIsDeleting(false)
             setShowDeleteConfirm(false)
+        }
+    }
+
+    const handleRemove = async () => {
+        setIsRemoving(true)
+        try {
+            await documentService.removeMyAccess(document.id)
+            toast.success('Document removed from your list')
+            queryClient.invalidateQueries(['documents'])
+            onDelete?.(document.id)
+        } catch (error) {
+            handleAPIError(error)
+        } finally {
+            setIsRemoving(false)
+            setShowRemoveConfirm(false)
         }
     }
 
@@ -104,7 +135,7 @@ export function DocumentCard({ document, onDelete }) {
 
                             {showMenu && (
                                 <div
-                                    className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-gray-100 rounded-xl shadow-xl py-1 z-10"
+                                    className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-1 z-10"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <button
@@ -119,14 +150,17 @@ export function DocumentCard({ document, onDelete }) {
                                     >
                                         <ShareIcon className="w-4 h-4 text-gray-400" /> Share
                                     </button>
-                                    {isOwner && (
+                                    {/* Delete lives on the Settings page (Danger Zone) only — owners
+                                        manage document deletion from there, not this menu. Non-owners
+                                        can remove the document from their own view instead. */}
+                                    {!isOwner && (
                                         <>
                                             <div className="my-1 border-t border-gray-100" />
                                             <button
-                                                onClick={() => { setShowDeleteConfirm(true); setShowMenu(false) }}
+                                                onClick={() => { setShowRemoveConfirm(true); setShowMenu(false) }}
                                                 className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                             >
-                                                <TrashIcon className="w-4 h-4" /> Delete
+                                                <TrashIcon className="w-4 h-4" /> Remove Document
                                             </button>
                                         </>
                                     )}
@@ -158,7 +192,7 @@ export function DocumentCard({ document, onDelete }) {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between gap-2">
-                    {isOwner && <RoleBadge role="OWNER" />}
+                    <RoleBadge role={document.userRole} />
                     <span className={clsx('text-xs px-2.5 py-0.5 rounded-full font-semibold ml-auto', VISIBILITY_COLORS[document.visibility] || VISIBILITY_COLORS.PRIVATE)}>
                         {document.visibility?.charAt(0) + document.visibility?.slice(1).toLowerCase()}
                     </span>
@@ -170,8 +204,112 @@ export function DocumentCard({ document, onDelete }) {
                 onClose={() => setShowDeleteConfirm(false)}
                 onConfirm={handleDelete}
                 title="Delete Document"
-                description={`Are you sure you want to delete "${document.title}"? This action cannot be undone.`}
+                description={`Move "${document.title}" to the Recycle Bin? You can restore it within ${RECYCLE_BIN_RETENTION_DAYS} days.`}
                 confirmLabel="Delete"
+                danger
+                loading={isDeleting}
+            />
+
+            <ConfirmDialog
+                isOpen={showRemoveConfirm}
+                onClose={() => setShowRemoveConfirm(false)}
+                onConfirm={handleRemove}
+                title="Remove Document"
+                description={`Remove "${document.title}" from your documents? You'll lose access and will need to be re-invited to see it again.`}
+                confirmLabel="Remove"
+                danger
+                loading={isRemoving}
+            />
+        </>
+    )
+}
+
+// Recycle Bin rendering — no click-to-open, no star/settings/share, just
+// Restore and Delete Permanently plus a "deleted X ago" / days-remaining line.
+function TrashDocumentCard({ document }) {
+    const queryClient = useQueryClient()
+    const [showPermanentConfirm, setShowPermanentConfirm] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const restoreMutation = useMutation({
+        mutationFn: () => documentService.restoreDocument(document.id),
+        onSuccess: () => {
+            toast.success('Document restored')
+            queryClient.invalidateQueries(['documents'])
+        },
+        onError: handleAPIError,
+    })
+
+    const handlePermanentDelete = async () => {
+        setIsDeleting(true)
+        try {
+            await documentService.permanentlyDeleteDocument(document.id)
+            toast.success('Document permanently deleted')
+            queryClient.invalidateQueries(['documents'])
+        } catch (error) {
+            handleAPIError(error)
+        } finally {
+            setIsDeleting(false)
+            setShowPermanentConfirm(false)
+        }
+    }
+
+    const daysRemaining = document.deletedAt
+        ? Math.max(0, RECYCLE_BIN_RETENTION_DAYS - differenceInDays(new Date(), parseISO(document.deletedAt)))
+        : null
+
+    return (
+        <>
+            <div className="relative bg-white border border-gray-100 rounded-2xl p-5 shadow-card overflow-hidden opacity-90">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <TrashIcon className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-700 truncate">{document.title}</h3>
+                </div>
+
+                <div className="mb-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>Deleted {timeAgo(document.deletedAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-amber-600">
+                        <ClockIcon className="w-3.5 h-3.5" />
+                        <span>
+                            {daysRemaining === 0
+                                ? 'Permanently deleted today'
+                                : `Permanently deleted in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => restoreMutation.mutate()}
+                        loading={restoreMutation.isPending}
+                    >
+                        <ArrowUturnLeftIcon className="w-4 h-4" /> Restore
+                    </Button>
+                    <button
+                        onClick={() => setShowPermanentConfirm(true)}
+                        title="Delete Permanently"
+                        className="p-2 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors border border-red-100"
+                    >
+                        <TrashIcon className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+
+            <ConfirmDialog
+                isOpen={showPermanentConfirm}
+                onClose={() => setShowPermanentConfirm(false)}
+                onConfirm={handlePermanentDelete}
+                title="Delete Permanently"
+                description={`Permanently delete "${document.title}"? This cannot be undone — the document, its versions, and all collaborator access will be gone for good.`}
+                confirmLabel="Delete Permanently"
                 danger
                 loading={isDeleting}
             />

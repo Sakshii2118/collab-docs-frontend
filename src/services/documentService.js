@@ -2,16 +2,17 @@ import api from './api'
 
 export const documentService = {
     // ── 2.3 List User Documents (with filter & search) ──────────────────────
-    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED|STARRED|RECENT
-    // `filter` maps to the backend's DocumentFilter enum. The UI calls
-    // STARRED "Favourites" — 'favourites' is a frontend-only label, mapped
-    // here to the backend's actual enum value. The 'trash' sidebar filter
-    // has no dedicated backend support yet and falls back to ALL.
+    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED|STARRED|RECENT|TRASH
+    // `filter` maps to the backend's DocumentFilter enum. Two UI labels
+    // don't match the enum name directly ('favourites' -> STARRED,
+    // 'recycleBin' -> TRASH) — frontend-only naming, mapped explicitly here.
     getDocuments: ({ filter, search, page = 0, size = 12 }) => {
         const params = { page, size }
         if (search) params.search = search
         if (filter === 'favourites') {
             params.filter = 'STARRED'
+        } else if (filter === 'recycleBin') {
+            params.filter = 'TRASH'
         } else if (filter === 'owned' || filter === 'shared' || filter === 'recent') {
             params.filter = filter.toUpperCase()
         }
@@ -78,4 +79,11 @@ export const documentService = {
     // ── 2.8 Record Document Open (for "Recent") ──────────────────────────────
     // POST /api/documents/{id}/open
     recordOpen: (id) => api.post(`/api/documents/${id}/open`).then(r => r.data),
+
+    // ── 2.9 Recycle Bin: Restore / Delete Permanently ────────────────────────
+    restoreDocument: (id) => api.post(`/api/documents/${id}/restore`).then(r => r.data),
+    permanentlyDeleteDocument: (id) => api.delete(`/api/documents/${id}/permanent`).then(r => r.data),
+
+    // ── 2.10 Leave a shared document (self-revoke, non-owner only) ──────────
+    removeMyAccess: (id) => api.delete(`/api/documents/${id}/access`).then(r => r.data),
 }

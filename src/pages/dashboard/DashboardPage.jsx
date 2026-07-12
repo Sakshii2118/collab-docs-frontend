@@ -24,11 +24,11 @@ const FILTERS = [
     { key: 'owned', label: 'My Documents', icon: DocumentTextIcon },
     { key: 'shared', label: 'Shared with Me', icon: UserCircleIcon },
     { key: 'favourites', label: 'Favourites', icon: StarIcon },
-    { key: 'trash', label: 'Trash', icon: TrashIcon },
+    { key: 'recycleBin', label: 'Recycle Bin', icon: TrashIcon },
 ]
 
 // Filters where creating a document from the empty state makes sense —
-// everywhere else (shared/favourites/trash) an empty result just means
+// everywhere else (shared/favourites/recycleBin) an empty result just means
 // "nothing matches this view," not "you have no documents."
 const CREATE_ELIGIBLE_FILTERS = ['all', 'owned', 'recent']
 
@@ -258,7 +258,7 @@ export default function DashboardPage() {
                         <>
                             <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 ${isFetching ? 'opacity-60 pointer-events-none' : ''} transition-opacity duration-150`}>
                                 {documents.map((doc) => (
-                                    <DocumentCard key={doc.id} document={doc} />
+                                    <DocumentCard key={doc.id} document={doc} isTrashView={filter === 'recycleBin'} />
                                 ))}
                             </div>
 
