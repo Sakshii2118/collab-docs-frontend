@@ -2,15 +2,14 @@ import api from './api'
 
 export const documentService = {
     // ── 2.3 List User Documents (with filter & search) ──────────────────────
-    // GET /api/documents/user/documents?page=&size=&ownedDocuments=
-    // `filter === 'owned'` maps to the backend's ownedDocuments flag, which
-    // restricts the result to documents the user actually owns (RBAC-checked
-    // server-side). Other filter values fall back to the default "all
-    // accessible" set — the backend has no dedicated support for them yet.
+    // GET /api/documents/user/documents?page=&size=&filter=ALL|OWNED|SHARED
+    // `filter` maps 1:1 to the backend's DocumentFilter enum (uppercased).
+    // Other sidebar filter values (recent/starred/trash) have no dedicated
+    // backend support yet and fall back to ALL.
     getDocuments: ({ filter, search, page = 0, size = 12 }) => {
         const params = { page, size }
         if (search) params.search = search
-        if (filter === 'owned') params.ownedDocuments = true
+        if (filter === 'owned' || filter === 'shared') params.filter = filter.toUpperCase()
         return api.get('/api/documents/user/documents', { params }).then(r => r.data)
     },
 
