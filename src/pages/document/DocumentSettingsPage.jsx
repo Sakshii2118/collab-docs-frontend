@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftIcon, TrashIcon, LockClosedIcon, UserGroupIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, TrashIcon, LockClosedIcon, UserGroupIcon, GlobeAltIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
@@ -19,6 +19,7 @@ const VISIBILITY_OPTIONS = [
 export default function DocumentSettingsPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
+    const { setSidebarOpen } = useOutletContext()
     const queryClient = useQueryClient()
     const [showDelete, setShowDelete] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -59,7 +60,7 @@ export default function DocumentSettingsPage() {
         setIsDeleting(true)
         try {
             await documentService.deleteDocument(documentId)
-            toast.success('Document deleted')
+            toast.success('Document moved to Recycle Bin')
             navigate('/dashboard')
             queryClient.invalidateQueries(['documents'])
         } catch (err) {
@@ -70,12 +71,18 @@ export default function DocumentSettingsPage() {
     }
 
     if (isLoading) {
-        return <div className="h-screen flex items-center justify-center"><Spinner /></div>
+        return <div className="flex-1 flex items-center justify-center"><Spinner /></div>
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+        <>
+            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm flex-shrink-0">
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                    <Bars3Icon className="w-5 h-5" />
+                </button>
                 <button
                     onClick={() => navigate(`/editor/${documentId}`)}
                     className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -88,7 +95,7 @@ export default function DocumentSettingsPage() {
                 </div>
             </header>
 
-            <main className="max-w-xl mx-auto py-8 px-4 space-y-5">
+            <main className="flex-1 overflow-y-auto max-w-xl w-full mx-auto py-8 px-4 space-y-5">
                 {/* General */}
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
                     <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5">General</h2>
@@ -153,11 +160,11 @@ export default function DocumentSettingsPage() {
                 onClose={() => setShowDelete(false)}
                 onConfirm={handleDelete}
                 title="Delete Document"
-                description={`Permanently delete "${doc?.title}"? This action cannot be undone.`}
+                description={`Move "${doc?.title}" to the Recycle Bin? You can restore it within 15 days.`}
                 confirmLabel="Delete"
                 danger
                 loading={isDeleting}
             />
-        </div>
+        </>
     )
 }

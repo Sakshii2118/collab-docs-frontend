@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftIcon, LinkIcon, TrashIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, LinkIcon, TrashIcon, CheckIcon, LockClosedIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import { documentService } from '../../services/documentService'
 import { shareService } from '../../services/shareService'
 import { Button } from '../../components/common/Button'
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast'
 export default function ShareSettingsPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
+    const { setSidebarOpen } = useOutletContext()
     const queryClient = useQueryClient()
     const [shareLink, setShareLink] = useState('')
     const [showShareLink, setShowShareLink] = useState(false)
@@ -47,13 +48,19 @@ export default function ShareSettingsPage() {
     }
 
     if (isLoading) {
-        return <div className="h-screen flex items-center justify-center"><Spinner /></div>
+        return <div className="flex-1 flex items-center justify-center"><Spinner /></div>
     }
 
     if (docError) {
         return (
-            <div className="min-h-screen bg-gray-50">
-                <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+            <>
+                <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm flex-shrink-0">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                        <Bars3Icon className="w-5 h-5" />
+                    </button>
                     <button
                         onClick={() => navigate('/dashboard')}
                         className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -62,7 +69,7 @@ export default function ShareSettingsPage() {
                     </button>
                     <h1 className="text-lg font-bold text-gray-900">Share Settings</h1>
                 </header>
-                <div className="flex flex-col items-center justify-center h-96 gap-4">
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
                     <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center">
                         <LockClosedIcon className="w-7 h-7 text-red-500" />
                     </div>
@@ -72,14 +79,20 @@ export default function ShareSettingsPage() {
                     </div>
                     <Button onClick={() => navigate('/dashboard')} variant="secondary">Back to Dashboard</Button>
                 </div>
-            </div>
+            </>
         )
     }
 
     if (!isOwner) {
         return (
-            <div className="min-h-screen bg-gray-50">
-                <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+            <>
+                <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm flex-shrink-0">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                    >
+                        <Bars3Icon className="w-5 h-5" />
+                    </button>
                     <button
                         onClick={() => navigate(`/editor/${documentId}`)}
                         className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -88,7 +101,7 @@ export default function ShareSettingsPage() {
                     </button>
                     <h1 className="text-lg font-bold text-gray-900">Share Settings</h1>
                 </header>
-                <div className="flex flex-col items-center justify-center h-96 gap-4">
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
                     <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center">
                         <LockClosedIcon className="w-7 h-7 text-amber-600" />
                     </div>
@@ -98,13 +111,19 @@ export default function ShareSettingsPage() {
                     </div>
                     <Button onClick={() => navigate(`/editor/${documentId}`)} variant="secondary">Back to Editor</Button>
                 </div>
-            </div>
+            </>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+        <>
+            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm flex-shrink-0">
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                    <Bars3Icon className="w-5 h-5" />
+                </button>
                 <button
                     onClick={() => navigate(`/editor/${documentId}`)}
                     className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -117,7 +136,7 @@ export default function ShareSettingsPage() {
                 </div>
             </header>
 
-            <main className="max-w-xl mx-auto py-8 px-4 space-y-5">
+            <main className="flex-1 overflow-y-auto max-w-xl w-full mx-auto py-8 px-4 space-y-5">
                 {/* Share Link Section */}
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
                     <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5">Public Share Link</h2>
@@ -167,6 +186,6 @@ export default function ShareSettingsPage() {
                     </p>
                 </section>
             </main>
-        </div>
+        </>
     )
 }

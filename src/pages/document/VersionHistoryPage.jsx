@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { versionService } from '../../services/versionService'
 import { documentService } from '../../services/documentService'
-import { ArrowLeftIcon, ClockIcon, ArrowUturnLeftIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, ClockIcon, ArrowUturnLeftIcon, PlusIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import { Button } from '../../components/common/Button'
 import { Spinner } from '../../components/common/Spinner'
 import { EmptyState } from '../../components/common/EmptyState'
@@ -15,6 +15,7 @@ import toast from 'react-hot-toast'
 export default function VersionHistoryPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
+    const { setSidebarOpen } = useOutletContext()
     const queryClient = useQueryClient()
     const [restoreTarget, setRestoreTarget] = useState(null)
     const [isRestoring, setIsRestoring] = useState(false)
@@ -76,10 +77,16 @@ export default function VersionHistoryPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
+        <>
+            <header className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                        >
+                            <Bars3Icon className="w-5 h-5" />
+                        </button>
                         <button
                             onClick={() => navigate(`/editor/${documentId}`)}
                             className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -97,6 +104,7 @@ export default function VersionHistoryPage() {
                 </div>
             </header>
 
+            <div className="flex-1 overflow-y-auto">
             {/* Create version form */}
             {showCreateForm && (
                 <div className="max-w-2xl mx-auto pt-6 px-6">
@@ -182,6 +190,7 @@ export default function VersionHistoryPage() {
                     </div>
                 )}
             </main>
+            </div>
 
             <ConfirmDialog
                 isOpen={!!restoreTarget}
@@ -192,6 +201,6 @@ export default function VersionHistoryPage() {
                 confirmLabel="Restore"
                 loading={isRestoring}
             />
-        </div>
+        </>
     )
 }

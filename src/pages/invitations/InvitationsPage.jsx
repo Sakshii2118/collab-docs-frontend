@@ -3,14 +3,15 @@ import { shareService } from '../../services/shareService'
 import { Button } from '../../components/common/Button'
 import { Spinner } from '../../components/common/Spinner'
 import { EmptyState } from '../../components/common/EmptyState'
-import { useNavigate } from 'react-router-dom'
-import { EnvelopeIcon, CheckIcon, XMarkIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useNavigate, useOutletContext } from 'react-router-dom'
+import { EnvelopeIcon, CheckIcon, XMarkIcon, ArrowLeftIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import { timeAgo } from '../../utils/formatters'
 import { handleAPIError } from '../../utils/errorHandler'
 import toast from 'react-hot-toast'
 
 export default function InvitationsPage() {
     const navigate = useNavigate()
+    const { setSidebarOpen } = useOutletContext()
     const queryClient = useQueryClient()
 
     const { data: invitations = [], isLoading } = useQuery({
@@ -38,8 +39,14 @@ export default function InvitationsPage() {
     })
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+        <>
+            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm flex-shrink-0">
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                    <Bars3Icon className="w-5 h-5" />
+                </button>
                 <button
                     onClick={() => navigate('/dashboard')}
                     className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -56,7 +63,7 @@ export default function InvitationsPage() {
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto p-6">
+            <main className="flex-1 overflow-y-auto max-w-2xl w-full mx-auto p-6">
                 {isLoading ? (
                     <div className="flex justify-center py-12"><Spinner /></div>
                 ) : invitations.length === 0 ? (
@@ -110,6 +117,6 @@ export default function InvitationsPage() {
                     </div>
                 )}
             </main>
-        </div>
+        </>
     )
 }

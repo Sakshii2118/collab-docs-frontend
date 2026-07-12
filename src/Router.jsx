@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { Spinner } from './components/common/Spinner'
+import { AppShell } from './components/layout/AppShell'
 
 // Auth pages
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
@@ -86,13 +87,20 @@ export const router = createBrowserRouter([
             {
                 element: <ProtectedRoute />,
                 children: [
-                    { path: 'dashboard', element: <DashboardPage /> },
+                    // Editor is deliberately outside AppShell — full-screen,
+                    // no persistent sidebar, by design.
                     { path: 'editor/:documentId', element: <EditorPage /> },
-                    { path: 'document/:documentId/versions', element: <VersionHistoryPage /> },
-                    { path: 'document/:documentId/settings', element: <DocumentSettingsPage /> },
-                    { path: 'document/:documentId/share', element: <ShareSettingsPage /> },
-                    { path: 'invitations', element: <InvitationsPage /> },
-                    { path: 'profile', element: <ProfilePage /> },
+                    {
+                        element: <AppShell />,
+                        children: [
+                            { path: 'dashboard', element: <DashboardPage /> },
+                            { path: 'document/:documentId/versions', element: <VersionHistoryPage /> },
+                            { path: 'document/:documentId/settings', element: <DocumentSettingsPage /> },
+                            { path: 'document/:documentId/share', element: <ShareSettingsPage /> },
+                            { path: 'invitations', element: <InvitationsPage /> },
+                            { path: 'profile', element: <ProfilePage /> },
+                        ],
+                    },
                 ],
             },
 

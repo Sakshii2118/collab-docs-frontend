@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { authService } from '../../services/authService'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { Avatar } from '../../components/common/Avatar'
 import { handleAPIError } from '../../utils/errorHandler'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
 export default function ProfilePage() {
     const navigate = useNavigate()
+    const { setSidebarOpen } = useOutletContext()
     const { user, setUser } = useAuthStore()
     const [formData, setFormData] = useState({
         firstName: user?.firstName || '',
@@ -58,8 +59,14 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm">
+        <>
+            <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-3 shadow-sm flex-shrink-0">
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                    <Bars3Icon className="w-5 h-5" />
+                </button>
                 <button
                     onClick={() => navigate('/dashboard')}
                     className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
@@ -72,7 +79,7 @@ export default function ProfilePage() {
                 </div>
             </header>
 
-            <main className="max-w-xl mx-auto py-8 px-4 space-y-5">
+            <main className="flex-1 overflow-y-auto max-w-xl w-full mx-auto py-8 px-4 space-y-5">
                 {/* Profile info */}
                 <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-card">
                     <div className="flex items-center gap-4 pb-5 mb-5 border-b border-gray-100">
@@ -134,6 +141,6 @@ export default function ProfilePage() {
                     </form>
                 </section>
             </main>
-        </div>
+        </>
     )
 }
