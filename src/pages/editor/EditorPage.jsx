@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, EllipsisVerticalIcon, ShareIcon, ClockIcon, Cog6ToothIcon, BookmarkIcon, ExclamationTriangleIcon, LockClosedIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
@@ -30,6 +30,7 @@ function decodeJwtPayload(token) {
 export default function EditorPage() {
     const { documentId } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const { user } = useAuthStore()
     const [showMenu, setShowMenu] = useState(false)
     const [showShare, setShowShare] = useState(false)
@@ -38,6 +39,11 @@ export default function EditorPage() {
     const [versionNotes, setVersionNotes] = useState('')
     const [isSavingVersion, setIsSavingVersion] = useState(false)
     const [accessRevokedReason, setAccessRevokedReason] = useState(null)
+
+    // Content from an uploaded file import (DOCX/PDF → HTML).
+    // Passed via router state so it's never in the URL and is gone on refresh.
+    const initialContent = location.state?.initialContent ?? null
+    const importedFileName = location.state?.importedFileName ?? null
 
     // ── Guest session detection ───────────────────────────────────────────────
     // ShareAccessPage stores these in sessionStorage when granting anonymous access.
@@ -67,6 +73,20 @@ export default function EditorPage() {
         if (isGuestSession || !doc?.id) return
         documentService.recordOpen(doc.id).catch(() => {})
     }, [isGuestSession, doc?.id])
+
+    // Show a one-time toast confirming successful import.
+    // Only fires when navigating here from the upload modal (location.state present).
+    useEffect(() => {
+        if (importedFileName && initialContent) {
+            toast.success(`Imported "${importedFileName}" successfully`)
+        } else if (importedFileName && !initialContent) {
+            toast('File imported — formatting could not be extracted, starting with blank document.', {
+                icon: '⚠️',
+                duration: 5000,
+            })
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []) // intentionally run once on mount
 
     const handleSaveVersion = async (e) => {
         e.preventDefault()
@@ -261,6 +281,7 @@ export default function EditorPage() {
                         role={role}
                         tokenOverride={isGuestSession ? guestToken : undefined}
                         onAccessRevoked={setAccessRevokedReason}
+                        initialContent={initialContent}
                     />
                 </div>
             </div>

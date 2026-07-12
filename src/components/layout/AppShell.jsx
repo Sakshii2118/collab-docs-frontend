@@ -6,7 +6,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { authService } from '../../services/authService'
 import { useAuthStore } from '../../store/authStore'
-import { CreateDocumentModal } from '../document/CreateDocumentModal'
+import { UploadDocumentModal } from '../document/UploadDocumentModal'
 import toast from 'react-hot-toast'
 
 export const FILTERS = [
@@ -162,7 +162,7 @@ export function AppShell() {
                 <Outlet context={{ setSidebarOpen, openCreateModal: () => setShowCreateModal(true) }} />
             </div>
 
-            <CreateDocumentModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+            <UploadDocumentModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
         </div>
     )
 }

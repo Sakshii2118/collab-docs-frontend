@@ -24,9 +24,13 @@ const ACCESS_LOST_CLOSE_CODE = 4001
 
 // ── Inner component: only mounted once provider (and therefore awareness) ──
 // exists. This avoids CollaborationCursor being configured with a null provider.
-function EditorInner({ ydoc, provider, role, user }) {
+// `initialContent` is an HTML string from a file import — injected exactly once
+// after the first Yjs sync event. Null for blank / normal documents.
+function EditorInner({ ydoc, provider, role, user, initialContent }) {
     const { setEditor, setYjsProvider, setConnectionStatus } = useEditorStore()
     const [isReady, setIsReady] = useState(false)
+    // Guard: inject imported content only once, even if sync fires again on reconnect
+    const contentInjected = useRef(false)
 
     const isEditable = role === 'OWNER' || role === 'EDITOR'
     const userName = user ? `${user.firstName} ${user.lastName}` : 'Guest'
@@ -64,13 +68,38 @@ function EditorInner({ ydoc, provider, role, user }) {
         if (!editor || !provider) return
 
         const handleStatus = ({ status }) => setConnectionStatus(status)
-        const handleSync = (isSynced) => { if (isSynced) setIsReady(true) }
+
+        const handleSync = (isSynced) => {
+            if (!isSynced) return
+            setIsReady(true)
+
+            // Inject imported content exactly once, after the Yjs document is
+            // in sync with the server. Injecting before sync would be overwritten
+            // by the server's (empty) snapshot arriving on the sync event.
+            if (initialContent && !contentInjected.current) {
+                contentInjected.current = true
+                // Small tick to let TipTap finish its own sync processing
+                requestAnimationFrame(() => {
+                    editor.commands.setContent(initialContent, false)
+                    // emit a change so Yjs picks up the injected content immediately
+                    editor.commands.focus('end')
+                })
+            }
+        }
 
         provider.on('status', handleStatus)
         provider.on('sync', handleSync)
 
-        // Fallback: show editor after 3 s even if WS service isn't running
-        const readyTimeout = setTimeout(() => setIsReady(true), 3000)
+        // Fallback: show editor after 3 s even if WS service isn't running.
+        // Also attempt injection if content hasn't been injected yet.
+        const readyTimeout = setTimeout(() => {
+            setIsReady(true)
+            if (initialContent && !contentInjected.current) {
+                contentInjected.current = true
+                editor.commands.setContent(initialContent, false)
+                editor.commands.focus('end')
+            }
+        }, 3000)
 
         setEditor(editor)
         setYjsProvider(provider)
@@ -80,13 +109,15 @@ function EditorInner({ ydoc, provider, role, user }) {
             provider.off('sync', handleSync)
             clearTimeout(readyTimeout)
         }
-    }, [editor, provider])
+    }, [editor, provider, initialContent])
 
     if (!isReady) {
         return (
             <div className="flex flex-col items-center justify-center py-24 text-gray-400">
                 <Spinner size="lg" color="primary" />
-                <p className="mt-4 text-sm">Connecting to document...</p>
+                <p className="mt-4 text-sm">
+                    {initialContent ? 'Importing document content…' : 'Connecting to document...'}
+                </p>
                 <p className="mt-1 text-xs text-gray-300">
                     {WS_URL.includes('localhost') ? 'Make sure the Yjs service is running on port 3000' : ''}
                 </p>
@@ -110,7 +141,8 @@ function EditorInner({ ydoc, provider, role, user }) {
 // `tokenOverride` allows guest sessions to bypass the authStore token.
 // `onAccessRevoked(reason)` fires when the server force-closes the session
 // because the document was deleted or this user's access was removed.
-export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride, onAccessRevoked }) {
+// `initialContent` is an HTML string passed from an uploaded file import.
+export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride, onAccessRevoked, initialContent }) {
     const { user, token: authToken } = useAuthStore()
     const effectiveToken = tokenOverride ?? authToken
     const { cleanup } = useEditorStore()
@@ -193,5 +225,5 @@ export function TipTapEditor({ documentId, yjsRoomId, role, tokenOverride, onAcc
         )
     }
 
-    return <EditorInner ydoc={ydoc} provider={provider} role={role} user={user} />
+    return <EditorInner ydoc={ydoc} provider={provider} role={role} user={user} initialContent={initialContent} />
 }
