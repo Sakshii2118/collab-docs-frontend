@@ -10,7 +10,6 @@ import {
     LockClosedIcon,
     DocumentTextIcon,
     DocumentArrowUpIcon,
-    PlusIcon,
     XMarkIcon,
     CheckCircleIcon,
     ExclamationTriangleIcon,
@@ -305,48 +304,15 @@ function UploadFileTab({ onClose }) {
 }
 
 // ── Combined modal ───────────────────────────────────────────────────────────
-const TABS = [
-    { id: 'blank', label: 'Create Blank', icon: PlusIcon },
-    { id: 'upload', label: 'Upload File', icon: DocumentArrowUpIcon },
-]
-
+// File upload/import (DOCX/PDF) is temporarily disabled — extraction quality
+// isn't good enough yet. Only blank-document creation is exposed for now.
 export function UploadDocumentModal({ isOpen, onClose }) {
-    const [activeTab, setActiveTab] = useState('blank')
-
-    const handleClose = () => {
-        setActiveTab('blank')
-        onClose()
-    }
-
     return (
-        <Modal isOpen={isOpen} onClose={handleClose} size="md" showClose>
-            {/* Tab bar — sits between the accent stripe and the tab body */}
-            <div className="flex border-b border-gray-100 px-6 pt-4 gap-1">
-                {TABS.map(({ id, label, icon: Icon }) => (
-                    <button
-                        key={id}
-                        type="button"
-                        onClick={() => setActiveTab(id)}
-                        className={`
-                            flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-lg
-                            border-b-2 transition-all duration-150 -mb-px
-                            ${activeTab === id
-                                ? 'border-primary-500 text-primary-600 bg-primary-50/60'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                            }
-                        `}
-                    >
-                        <Icon className="w-4 h-4" />
-                        {label}
-                    </button>
-                ))}
+        <Modal isOpen={isOpen} onClose={onClose} size="md" showClose>
+            <div className="px-6 pt-5 pb-1">
+                <h2 className="text-lg font-semibold text-gray-800">New Document</h2>
             </div>
-
-            {/* Tab content */}
-            {activeTab === 'blank'
-                ? <CreateBlankTab onClose={handleClose} />
-                : <UploadFileTab onClose={handleClose} />
-            }
+            <CreateBlankTab onClose={onClose} />
         </Modal>
     )
 }
