@@ -7,6 +7,7 @@ import { documentService } from '../../services/documentService'
 import { useAuthStore } from '../../store/authStore'
 import { TipTapEditor } from '../../components/editor/TipTapEditor'
 import { EditorMenuBar } from '../../components/editor/EditorMenuBar'
+import { EditorStatusBar } from '../../components/editor/EditorStatusBar'
 import { ActiveUsersList } from '../../components/editor/ActiveUsersList'
 import { ConnectionStatus } from '../../components/editor/ConnectionStatus'
 import { ShareModal } from '../../components/sharing/ShareModal'
@@ -272,19 +273,24 @@ export default function EditorPage() {
             {/* Toolbar — hidden for VIEWER */}
             {(role === 'OWNER' || role === 'EDITOR') && <EditorMenuBar />}
 
-            {/* Editor area */}
-            <div className="flex-1 overflow-y-auto">
-                <div className="max-w-4xl mx-auto px-4 py-8">
-                    <TipTapEditor
-                        documentId={effectiveDocumentId}
-                        yjsRoomId={yjsRoomId}
-                        role={role}
-                        tokenOverride={isGuestSession ? guestToken : undefined}
-                        onAccessRevoked={setAccessRevokedReason}
-                        initialContent={initialContent}
-                    />
+            {/* Editor area — a distinct "paper" page on a neutral canvas, instead of
+                text floating directly on the app background */}
+            <div className="flex-1 overflow-y-auto bg-gray-100">
+                <div className="max-w-[850px] mx-auto px-4 sm:px-8 py-8 sm:py-10">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 min-h-[calc(100vh-14rem)]">
+                        <TipTapEditor
+                            documentId={effectiveDocumentId}
+                            yjsRoomId={yjsRoomId}
+                            role={role}
+                            tokenOverride={isGuestSession ? guestToken : undefined}
+                            onAccessRevoked={setAccessRevokedReason}
+                            initialContent={initialContent}
+                        />
+                    </div>
                 </div>
             </div>
+
+            <EditorStatusBar />
 
             {/* Share Modal */}
             {showShare && !isGuestSession && (

@@ -8,6 +8,19 @@ import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Highlight from '@tiptap/extension-highlight'
 import Link from '@tiptap/extension-link'
+import Table from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableHeader from '@tiptap/extension-table-header'
+import TableCell from '@tiptap/extension-table-cell'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import TextStyle from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import FontFamily from '@tiptap/extension-font-family'
+import Subscript from '@tiptap/extension-subscript'
+import Superscript from '@tiptap/extension-superscript'
+import Typography from '@tiptap/extension-typography'
+import CharacterCount from '@tiptap/extension-character-count'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import { useAuthStore } from '../../store/authStore'
@@ -44,6 +57,19 @@ function EditorInner({ ydoc, provider, role, user, initialContent }) {
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             Highlight,
             Link.configure({ openOnClick: false }),
+            TextStyle,
+            Color.configure({ types: ['textStyle'] }),
+            FontFamily.configure({ types: ['textStyle'] }),
+            Subscript,
+            Superscript,
+            Typography,
+            TaskList,
+            TaskItem.configure({ nested: true }),
+            Table.configure({ resizable: true }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            CharacterCount,
             Collaboration.configure({ document: ydoc }),
             CollaborationCursor.configure({
                 provider,
@@ -126,9 +152,9 @@ function EditorInner({ ydoc, provider, role, user, initialContent }) {
     }
 
     return (
-        <div className={`max-w-[750px] mx-auto ${!isEditable ? 'select-none' : ''}`}>
+        <div className={isEditable ? '' : 'select-none'}>
             {!isEditable && (
-                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 flex items-center gap-2">
+                <div className="mx-8 mt-6 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 flex items-center gap-2">
                     <span>🔒</span> You have read-only access to this document.
                 </div>
             )}
