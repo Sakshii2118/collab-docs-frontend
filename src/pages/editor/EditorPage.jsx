@@ -43,6 +43,9 @@ export default function EditorPage() {
     const [versionNotes, setVersionNotes] = useState('')
     const [isSavingVersion, setIsSavingVersion] = useState(false)
     const [accessRevokedReason, setAccessRevokedReason] = useState(null)
+    const [isEditingTitle, setIsEditingTitle] = useState(false)
+    const [titleDraft, setTitleDraft] = useState('')
+    const [isSavingTitle, setIsSavingTitle] = useState(false)
 
     // Content from an uploaded file import (DOCX/PDF → HTML).
     // Passed via router state so it's never in the URL and is gone on refresh.
@@ -69,6 +72,8 @@ export default function EditorPage() {
     // Role: backend now returns userRole in DocumentResponse; guests are always VIEWER
     const role = isGuestSession ? 'VIEWER' : (doc?.userRole ?? 'VIEWER')
     const canSaveVersion = !isGuestSession && (role === 'OWNER' || role === 'EDITOR')
+    // Matches the backend's own check (DocumentService.updateTitle) — only the owner can rename
+    const canRenameTitle = !isGuestSession && role === 'OWNER'
 
     // Record this open for the "Recent" list. Fire-and-forget — guests have no
     // real user JWT and aren't tracked, and a failure here shouldn't block
@@ -91,6 +96,31 @@ export default function EditorPage() {
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []) // intentionally run once on mount
+
+    const startEditingTitle = () => {
+        if (!canRenameTitle) return
+        setTitleDraft(title)
+        setIsEditingTitle(true)
+    }
+
+    const commitTitleEdit = async () => {
+        const nextTitle = titleDraft.trim()
+        setIsEditingTitle(false)
+        // No-op if unchanged or cleared back to nothing — don't round-trip to
+        // the server for a rename that isn't actually a rename.
+        if (!nextTitle || nextTitle === title) return
+
+        setIsSavingTitle(true)
+        try {
+            await documentService.updateTitle(doc.id, nextTitle)
+            queryClient.invalidateQueries({ queryKey: ['document', documentId] })
+            queryClient.invalidateQueries({ queryKey: ['documents'] })
+        } catch (err) {
+            handleAPIError(err)
+        } finally {
+            setIsSavingTitle(false)
+        }
+    }
 
     const handleSaveVersion = async (e) => {
         e.preventDefault()
@@ -202,9 +232,32 @@ export default function EditorPage() {
                         >
                             <ArrowLeftIcon className="w-5 h-5" />
                         </button>
-                        <h1 className="text-base font-semibold text-gray-900 truncate max-w-xs sm:max-w-md">
-                            {title}
-                        </h1>
+                        {isEditingTitle ? (
+                            <input
+                                type="text"
+                                value={titleDraft}
+                                onChange={(e) => setTitleDraft(e.target.value)}
+                                onBlur={commitTitleEdit}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur()
+                                    if (e.key === 'Escape') setIsEditingTitle(false)
+                                }}
+                                autoFocus
+                                onFocus={(e) => e.target.select()}
+                                className="text-base font-semibold text-gray-900 bg-white border border-primary-300 rounded-lg px-2 py-0.5 -mx-2 -my-0.5 max-w-xs sm:max-w-md focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                            />
+                        ) : (
+                            <h1
+                                onClick={startEditingTitle}
+                                title={canRenameTitle ? 'Click to rename' : undefined}
+                                className={`text-base font-semibold text-gray-900 truncate max-w-xs sm:max-w-md rounded-lg px-2 py-0.5 -mx-2 -my-0.5 transition-colors ${
+                                    canRenameTitle ? 'cursor-text hover:bg-gray-100' : ''
+                                }`}
+                            >
+                                {title}
+                            </h1>
+                        )}
+                        {isSavingTitle && <Spinner size="sm" color="primary" />}
                         {isGuestSession && (
                             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
                                 Guest · Read only

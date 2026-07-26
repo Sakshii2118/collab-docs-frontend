@@ -83,19 +83,26 @@ export function VersionHistorySidebar({ documentId, isOpen, onClose, canRestore 
                         <div className="relative">
                             <div className="absolute left-[15px] top-1 bottom-1 w-px bg-gray-100" />
                             <div className="space-y-3">
-                                {versions.map((version, i) => (
+                                {versions.map((version, i) => {
+                                    const versionTitle = version.versionName || `Version ${versions.length - i}`
+                                    // Saved (manual) checkpoints stand out with a filled icon;
+                                    // restore audit-trail entries get a lighter, outlined one.
+                                    const isSaved = !version.restoration
+                                    return (
                                     <div key={version.id} className="relative flex items-start gap-3">
                                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center z-10 ${
-                                            i === 0 ? 'bg-primary-500' : 'bg-white border-2 border-gray-200'
+                                            isSaved ? 'bg-primary-500' : 'bg-white border-2 border-gray-200'
                                         }`}>
-                                            <ClockIcon className={`w-3.5 h-3.5 ${i === 0 ? 'text-white' : 'text-gray-400'}`} />
+                                            <ClockIcon className={`w-3.5 h-3.5 ${isSaved ? 'text-white' : 'text-gray-400'}`} strokeWidth={isSaved ? 2.5 : 1.5} />
                                         </div>
                                         <div className="flex-1 min-w-0 bg-gray-50 hover:bg-gray-100/80 border border-gray-100 rounded-xl p-3 transition-colors">
-                                            <div className="font-semibold text-gray-900 text-sm truncate">
-                                                {version.versionName || `Version ${versions.length - i}`}
+                                            <div className="font-semibold text-gray-900 text-sm truncate" title={versionTitle}>
+                                                {versionTitle}
                                             </div>
                                             {version.changeNotes && (
-                                                <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{version.changeNotes}</div>
+                                                <div className="text-xs text-gray-500 mt-0.5 line-clamp-2" title={version.changeNotes}>
+                                                    {version.changeNotes}
+                                                </div>
                                             )}
                                             <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-gray-400">
                                                 <span>{timeAgo(version.createdAt)}</span>
@@ -116,7 +123,8 @@ export function VersionHistorySidebar({ documentId, isOpen, onClose, canRestore 
                                             )}
                                         </div>
                                     </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     )}
