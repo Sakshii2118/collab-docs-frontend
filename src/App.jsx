@@ -1,8 +1,20 @@
 import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { router } from './Router.jsx'
 import { useAuthStore } from './store/authStore'
 import { refreshAccessToken, forceLogout } from './services/api'
+
+// Toasts (react-hot-toast) otherwise only go away on their own timer, which
+// can sit over clickable UI (e.g. the header's icon buttons) for seconds
+// after the user's already moved on. Dismiss on any click, anywhere.
+function useClickAnywhereDismissesToasts() {
+    useEffect(() => {
+        const dismissAll = () => toast.dismiss()
+        document.addEventListener('click', dismissAll)
+        return () => document.removeEventListener('click', dismissAll)
+    }, [])
+}
 
 // Access token lives 15 min server-side (JWT_EXPIRATION_MS). Refresh well
 // before that, proactively — not just reactively on a failed REST call —
@@ -60,6 +72,7 @@ function useProactiveTokenRefresh() {
 
 function App() {
     useProactiveTokenRefresh()
+    useClickAnywhereDismissesToasts()
     return <RouterProvider router={router} />
 }
 
