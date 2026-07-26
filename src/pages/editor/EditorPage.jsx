@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon, EllipsisVerticalIcon, ShareIcon, ClockIcon, Cog6ToothIcon, BookmarkIcon, ExclamationTriangleIcon, LockClosedIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { documentService } from '../../services/documentService'
@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore'
 import { TipTapEditor } from '../../components/editor/TipTapEditor'
 import { EditorMenuBar } from '../../components/editor/EditorMenuBar'
 import { EditorStatusBar } from '../../components/editor/EditorStatusBar'
+import { VersionHistorySidebar } from '../../components/editor/VersionHistorySidebar'
 import { ActiveUsersList } from '../../components/editor/ActiveUsersList'
 import { ConnectionStatus } from '../../components/editor/ConnectionStatus'
 import { ShareModal } from '../../components/sharing/ShareModal'
@@ -33,8 +34,10 @@ export default function EditorPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const { user } = useAuthStore()
+    const queryClient = useQueryClient()
     const [showMenu, setShowMenu] = useState(false)
     const [showShare, setShowShare] = useState(false)
+    const [showHistorySidebar, setShowHistorySidebar] = useState(false)
     const [showSaveVersion, setShowSaveVersion] = useState(false)
     const [versionName, setVersionName] = useState('')
     const [versionNotes, setVersionNotes] = useState('')
@@ -99,6 +102,7 @@ export default function EditorPage() {
                 changeNotes: versionNotes.trim() || undefined,
             })
             toast.success('Version saved!')
+            queryClient.invalidateQueries({ queryKey: ['versions', doc?.id ?? documentId] })
             setShowSaveVersion(false)
             setVersionName('')
             setVersionNotes('')
@@ -224,6 +228,32 @@ export default function EditorPage() {
                             </button>
                         )}
 
+                        {/* Save version — dedicated icon button (was buried in the "..." menu) */}
+                        {canSaveVersion && (
+                            <button
+                                onClick={() => setShowSaveVersion(true)}
+                                title="Save version"
+                                className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <BookmarkIcon className="w-5 h-5" />
+                            </button>
+                        )}
+
+                        {/* Version history — opens the sidebar instead of navigating away */}
+                        {!isGuestSession && (
+                            <button
+                                onClick={() => setShowHistorySidebar((v) => !v)}
+                                title="Version history"
+                                className={`p-2 rounded-lg transition-colors ${
+                                    showHistorySidebar
+                                        ? 'bg-primary-50 text-primary-600'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                                }`}
+                            >
+                                <ClockIcon className="w-5 h-5" />
+                            </button>
+                        )}
+
                         {/* More menu (hidden for guests) */}
                         {!isGuestSession && (
                             <div className="relative">
@@ -236,25 +266,11 @@ export default function EditorPage() {
 
                                 {showMenu && (
                                     <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-xl shadow-xl py-1 z-50 animate-slide-down">
-                                        {canSaveVersion && (
-                                            <button
-                                                onClick={() => { setShowSaveVersion(true); setShowMenu(false) }}
-                                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                                            >
-                                                <BookmarkIcon className="w-4 h-4" /> Save Version
-                                            </button>
-                                        )}
                                         <button
                                             onClick={() => { setShowShare(true); setShowMenu(false) }}
                                             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                                         >
                                             <ShareIcon className="w-4 h-4" /> Share Document
-                                        </button>
-                                        <button
-                                            onClick={() => { navigate(`/document/${effectiveDocumentId}/versions`); setShowMenu(false) }}
-                                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                                        >
-                                            <ClockIcon className="w-4 h-4" /> Version History
                                         </button>
                                         <button
                                             onClick={() => { navigate(`/document/${effectiveDocumentId}/settings`); setShowMenu(false) }}
@@ -273,24 +289,37 @@ export default function EditorPage() {
             {/* Toolbar — hidden for VIEWER */}
             {(role === 'OWNER' || role === 'EDITOR') && <EditorMenuBar />}
 
-            {/* Editor area — a distinct "paper" page on a neutral canvas, instead of
-                text floating directly on the app background */}
-            <div className="flex-1 overflow-y-auto bg-gray-100">
-                <div className="max-w-[850px] mx-auto px-4 sm:px-8 py-8 sm:py-10">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 min-h-[calc(100vh-14rem)]">
-                        <TipTapEditor
-                            documentId={effectiveDocumentId}
-                            yjsRoomId={yjsRoomId}
-                            role={role}
-                            tokenOverride={isGuestSession ? guestToken : undefined}
-                            onAccessRevoked={setAccessRevokedReason}
-                            initialContent={initialContent}
-                        />
+            {/* Relative wrapper scopes the version history sidebar to dock
+                below the header instead of covering it */}
+            <div className="relative flex-1 flex flex-col overflow-hidden">
+                {/* Editor area — a distinct "paper" page on a neutral canvas, instead of
+                    text floating directly on the app background */}
+                <div className="flex-1 overflow-y-auto bg-gray-100">
+                    <div className="max-w-[850px] mx-auto px-4 sm:px-8 py-8 sm:py-10">
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 min-h-[calc(100vh-14rem)]">
+                            <TipTapEditor
+                                documentId={effectiveDocumentId}
+                                yjsRoomId={yjsRoomId}
+                                role={role}
+                                tokenOverride={isGuestSession ? guestToken : undefined}
+                                onAccessRevoked={setAccessRevokedReason}
+                                initialContent={initialContent}
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <EditorStatusBar />
+                <EditorStatusBar />
+
+                {!isGuestSession && (
+                    <VersionHistorySidebar
+                        documentId={effectiveDocumentId}
+                        isOpen={showHistorySidebar}
+                        onClose={() => setShowHistorySidebar(false)}
+                        canRestore={canSaveVersion}
+                    />
+                )}
+            </div>
 
             {/* Share Modal */}
             {showShare && !isGuestSession && (
